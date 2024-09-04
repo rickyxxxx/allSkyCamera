@@ -438,7 +438,9 @@ int main(int argc, char *argv[])
   {
     printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
     uint32_t dataSize = 3856 * 2180 * 2;
-    char *filename = getDateTime() + ".bin";
+    std::string dateTimeStr(getDateTime());
+    dateTimeStr.erase(std::remove(dateTimeStr.begin(), dateTimeStr.end(), '\n'), dateTimeStr.end());
+    std::string filename = dateTimeStr + ".bin";
     std::ofstream outFile(filename, std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
