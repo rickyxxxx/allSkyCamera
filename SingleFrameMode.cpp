@@ -67,7 +67,7 @@ void FirmWareVersion(qhyccd_handle *h)
 
 }
 
-char* getDatetime()
+char* getDateTime()
 {
   time_t rawtime;
   struct tm * timeinfo;
