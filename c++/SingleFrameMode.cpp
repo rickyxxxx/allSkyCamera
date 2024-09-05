@@ -71,12 +71,15 @@ char* getDateTime()
 {
   time_t rawtime;
   struct tm * timeinfo;
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
-  char *time_str = asctime (timeinfo);
-  char *time_str2 = (char *)malloc(strlen(time_str) - 1);
-  strncpy(time_str2, time_str, strlen(time_str) - 1);
-  time_str2[strlen(time_str) - 1] = '\0';
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+
+  char time_str[15]; // YYMMDDhhmmss + null terminator
+  strftime(time_str, sizeof(time_str), "%y%m%d%H%M%S", timeinfo);
+
+  char *time_str2 = (char *)malloc(strlen(time_str) + 1);
+  strcpy(time_str2, time_str);
+
   return time_str2;
 }
 
@@ -443,7 +446,9 @@ int main(int argc, char *argv[])
     printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
     uint32_t dataSize = 3856 * 2180 * 2;
     char *filename = strcat(getDateTime(), ".bin");
+    printf("Filename: %s\n", filename);
     char *filename_w_path = strcat("../shared/bin/", filename);
+    printf("Filename with path: %s\n", filename_w_path);
     std::ofstream outFile(filename_w_path, std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
