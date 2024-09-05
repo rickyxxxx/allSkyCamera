@@ -85,6 +85,27 @@ char* getDateTime(char *suffix)
   return filename;
 }
 
+int* readSettings(const std::string &filename) {
+  std::ifstream file(filename);
+  static int settings[4];
+
+  if (!file.is_open()) {
+    std::cerr << "Unable to open file: " << filename << std::endl;
+    return nullptr;
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    if (!(file >> settings[i])) {
+      std::cerr << "Error reading settings from file: " << filename << std::endl;
+      file.close();
+      return nullptr;
+    }
+  }
+
+  file.close();
+  return settings;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -365,6 +386,14 @@ int main(int argc, char *argv[])
 
   while (true){
     sleep(INTERVAL);
+    int* settings = readSettings("../shared/settings.txt");
+    if (settings != nullptr) {
+      CHIP_GAIN = settings[0];
+      CHIP_OFFSET = settings[1];
+      EXPOSURE_TIME = settings[2];
+      INTERVAL = settings[3];
+    }
+
     // check gain
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
     if (QHYCCD_SUCCESS == retVal)
