@@ -462,7 +462,6 @@ int main(int argc, char *argv[])
     uint32_t length = GetQHYCCDMemLength(pCamHandle);
     if (length > 0)
     {
-      printf("\n\n\n%d\n\n\n", length);
       pImgData = new unsigned char[length];
       memset(pImgData, 0, length);
       printf("Allocated memory for frame: %d [uchar].\n", length);
