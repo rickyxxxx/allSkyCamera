@@ -67,7 +67,7 @@ void FirmWareVersion(qhyccd_handle *h)
 
 }
 
-char* getDateTime()
+char* getDateTime(char *suffix)
 {
   time_t rawtime;
   struct tm * timeinfo;
@@ -80,7 +80,9 @@ char* getDateTime()
   char *time_str2 = (char *)malloc(strlen(time_str) + 1);
   strcpy(time_str2, time_str);
 
-  return time_str2;
+  char *filename = strcat(time_str2, suffix);
+
+  return filename;
 }
 
 
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
   int USB_TRAFFIC = 10;
   int CHIP_GAIN = 10;
   int CHIP_OFFSET = 140;
-  int EXPOSURE_TIME = 1000;
+  int EXPOSURE_TIME = 20000;
   int camBinX = 1;
   int camBinY = 1;
 
@@ -445,8 +447,8 @@ int main(int argc, char *argv[])
   {
     printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
     uint32_t dataSize = 3856 * 2180 * 2;
-    char *filename = strcat(getDateTime(), ".bin");
-    printf("Filename: %s\n", filename);
+    char *full_filename = strcat("../shared/bin/",getDateTime(".bin"));
+    printf("Writing to %s\n", full_filename);
     std::ofstream outFile("../shared/bin/output.bin", std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
