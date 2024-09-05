@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
     std::string filename = getDateTime(".bin");
     std::string full_filename = directory + filename;
     printf("Writing to %s\n", full_filename.c_str());
-    std::ofstream outFile("../shared/bin/output.bin", std::ios::binary);
+    std::ofstream outFile(full_filename.c_str(), std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
     } else {
