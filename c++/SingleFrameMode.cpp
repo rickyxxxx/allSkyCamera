@@ -73,7 +73,11 @@ char* getDateTime()
   struct tm * timeinfo;
   time ( &rawtime );
   timeinfo = localtime ( &rawtime );
-  return asctime (timeinfo);
+  char *time_str = asctime (timeinfo);
+  char *time_str2 = (char *)malloc(strlen(time_str) - 1);
+  strncpy(time_str2, time_str, strlen(time_str) - 1);
+  time_str2[strlen(time_str) - 1] = '\0';
+  return time_str2;
 }
 
 
