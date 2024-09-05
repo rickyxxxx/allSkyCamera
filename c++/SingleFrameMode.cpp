@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
   int CHIP_GAIN = 10;
   int CHIP_OFFSET = 140;
   int EXPOSURE_TIME = 20000;
+  int INTERVAL = 2;
   int camBinX = 1;
   int camBinY = 1;
 
@@ -320,52 +321,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  // check gain
-  retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
-  if (QHYCCD_SUCCESS == retVal)
-  {
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, CHIP_GAIN);
-    if (retVal == QHYCCD_SUCCESS)
-    {
-      printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", CHIP_GAIN);
-    }
-    else
-    {
-      printf("SetQHYCCDParam CONTROL_GAIN failure, error: %d\n", retVal);
-      getchar();
-      return 1;
-    }
-  }
-
-  // check offset
-  retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
-  if (QHYCCD_SUCCESS == retVal)
-  {
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, CHIP_OFFSET);
-    if (QHYCCD_SUCCESS == retVal)
-    {
-      printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success.\n", CHIP_OFFSET);
-    }
-    else
-    {
-      printf("SetQHYCCDParam CONTROL_GAIN failed.\n");
-      getchar();
-      return 1;
-    }
-  }
-
-  // set exposure time
-  retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, EXPOSURE_TIME);
-  printf("SetQHYCCDParam CONTROL_EXPOSURE set to: %d, success.\n", EXPOSURE_TIME);
-  if (QHYCCD_SUCCESS == retVal)
-  {}
-  else
-  {
-    printf("SetQHYCCDParam CONTROL_EXPOSURE failure, error: %d\n", retVal);
-    getchar();
-    return 1;
-  }
-
   // set image resolution
   retVal = SetQHYCCDResolution(pCamHandle, roiStartX, roiStartY, roiSizeX, roiSizeY);
   if (QHYCCD_SUCCESS == retVal)
@@ -408,59 +363,108 @@ int main(int argc, char *argv[])
     }
   }
 
-  // single frame
-  printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
-  retVal = ExpQHYCCDSingleFrame(pCamHandle);
-  printf("ExpQHYCCDSingleFrame(pCamHandle) - end...\n");
-  if (QHYCCD_ERROR != retVal)
-  {
-    printf("ExpQHYCCDSingleFrame success.\n");
-    if (QHYCCD_READ_DIRECTLY != retVal)
+  while (true){
+    sleep(INTERVAL);
+    // check gain
+    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
+    if (QHYCCD_SUCCESS == retVal)
     {
-      sleep(1);
+      retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, CHIP_GAIN);
+      if (retVal == QHYCCD_SUCCESS)
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", CHIP_GAIN);
+      }
+      else
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN failure, error: %d\n", retVal);
+        getchar();
+        return 1;
+      }
     }
-  }
-  else
-  {
-    printf("ExpQHYCCDSingleFrame failure, error: %d\n", retVal);
-    return 1;
-  }
 
-  // get requested memory lenght
-  uint32_t length = GetQHYCCDMemLength(pCamHandle);
-  if (length > 0)
-  {
-    printf("\n\n\n%d\n\n\n", length);
-    pImgData = new unsigned char[length];
-    memset(pImgData, 0, length);
-    printf("Allocated memory for frame: %d [uchar].\n", length);
-  }
-  else
-  {
-    printf("Cannot allocate memory for frame.\n");
-    return 1;
-  }
-
-  // get single frame
-  retVal = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
-  if (QHYCCD_SUCCESS == retVal)
-  {
-    printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
-    uint32_t dataSize = 3856 * 2180 * 2;
-    std::string directory = "../shared/bin/";
-    std::string filename = getDateTime(".bin");
-    std::string full_filename = directory + filename;
-    printf("Writing to %s\n", full_filename.c_str());
-    std::ofstream outFile(full_filename.c_str(), std::ios::binary);
-    if (outFile.is_open()) {
-        outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
-    } else {
-        std::cerr << "Failed" << std::endl;
+    // check offset
+    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
+    if (QHYCCD_SUCCESS == retVal)
+    {
+      retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, CHIP_OFFSET);
+      if (QHYCCD_SUCCESS == retVal)
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success.\n", CHIP_OFFSET);
+      }
+      else
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN failed.\n");
+        getchar();
+        return 1;
+      }
     }
-  }
-  else
-  {
-    printf("GetQHYCCDSingleFrame failure, error: %d\n", retVal);
+
+    // set exposure time
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, EXPOSURE_TIME);
+    printf("SetQHYCCDParam CONTROL_EXPOSURE set to: %d, success.\n", EXPOSURE_TIME);
+    if (QHYCCD_SUCCESS == retVal)
+    {}
+    else
+    {
+      printf("SetQHYCCDParam CONTROL_EXPOSURE failure, error: %d\n", retVal);
+      getchar();
+      return 1;
+    }
+
+    // single frame
+    printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
+    retVal = ExpQHYCCDSingleFrame(pCamHandle);
+    printf("ExpQHYCCDSingleFrame(pCamHandle) - end...\n");
+    if (QHYCCD_ERROR != retVal)
+    {
+      printf("ExpQHYCCDSingleFrame success.\n");
+      if (QHYCCD_READ_DIRECTLY != retVal)
+      {
+        sleep(1);
+      }
+    }
+    else
+    {
+      printf("ExpQHYCCDSingleFrame failure, error: %d\n", retVal);
+      return 1;
+    }
+
+    // get requested memory lenght
+    uint32_t length = GetQHYCCDMemLength(pCamHandle);
+    if (length > 0)
+    {
+      printf("\n\n\n%d\n\n\n", length);
+      pImgData = new unsigned char[length];
+      memset(pImgData, 0, length);
+      printf("Allocated memory for frame: %d [uchar].\n", length);
+    }
+    else
+    {
+      printf("Cannot allocate memory for frame.\n");
+      return 1;
+    }
+
+    // get single frame
+    retVal = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
+    if (QHYCCD_SUCCESS == retVal)
+    {
+      printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
+      uint32_t dataSize = 3856 * 2180 * 2;
+      std::string directory = "../shared/bin/";
+      std::string filename = getDateTime(".bin");
+      std::string full_filename = directory + filename;
+      printf("Writing to %s\n", full_filename.c_str());
+      std::ofstream outFile(full_filename.c_str(), std::ios::binary);
+      if (outFile.is_open()) {
+          outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
+      } else {
+          std::cerr << "Failed" << std::endl;
+      }
+    }
+    else
+    {
+      printf("GetQHYCCDSingleFrame failure, error: %d\n", retVal);
+    }
   }
 
   delete [] pImgData;
