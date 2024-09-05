@@ -447,8 +447,10 @@ int main(int argc, char *argv[])
   {
     printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, success.\n", roiSizeX, roiSizeY, bpp, channels);
     uint32_t dataSize = 3856 * 2180 * 2;
-    char *full_filename = strcat("../shared/bin/",getDateTime(".bin"));
-    printf("Writing to %s\n", full_filename);
+    std::string directory = "../shared/bin/";
+    std::string filename = getDateTime(".bin");
+    std::string full_filename = directory + filename;
+    printf("Writing to %s\n", full_filename.c_str());
     std::ofstream outFile("../shared/bin/output.bin", std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
