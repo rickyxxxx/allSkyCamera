@@ -447,9 +447,7 @@ int main(int argc, char *argv[])
     uint32_t dataSize = 3856 * 2180 * 2;
     char *filename = strcat(getDateTime(), ".bin");
     printf("Filename: %s\n", filename);
-    char *filename_w_path = strcat("../shared/bin/", filename);
-    printf("Filename with path: %s\n", filename_w_path);
-    std::ofstream outFile(filename_w_path, std::ios::binary);
+    std::ofstream outFile("../shared/bin/output.bin", std::ios::binary);
     if (outFile.is_open()) {
         outFile.write(reinterpret_cast<char*>(pImgData), dataSize);
     } else {
