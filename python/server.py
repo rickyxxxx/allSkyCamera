@@ -34,6 +34,7 @@ def index():
 
     GAIN, OFFSET, EXPOSURE, INTERVAL = settings.split(" ")
     EXPOSURE = f"{int(EXPOSURE):,}"
+    print(f"Settings: {GAIN} {OFFSET} {EXPOSURE} {INTERVAL}")
     return render_template_string("""
     <!DOCTYPE html>
     <html>
