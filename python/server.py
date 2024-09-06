@@ -2,9 +2,21 @@ from flask import Flask, send_from_directory, render_template_string, request, j
 import os
 import zipfile
 import io
+import tqdm
+import numpy as np
+from PIL import Image
 
-from python.plot import convert_images
+def convert_images():
+    binary_files = os.listdir("../shared/bin")
 
+    for file in tqdm.tqdm(binary_files):
+        try:
+            data = np.fromfile(f"../shared/bin/{file}", dtype=np.uint16).reshape(2180, 3856)
+            image = Image.fromarray(data)
+            image.save(f"../shared/img/{file.replace('.bin', '.tif')}")
+            os.remove(f"../shared/bin/{file}")
+        except ValueError:
+            print(f"File {file} is not a valid binary file. Skipping...")
 app = Flask(__name__)
 PATH = "../shared/img/"
 
