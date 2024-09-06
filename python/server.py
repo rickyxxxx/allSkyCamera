@@ -21,7 +21,7 @@ app = Flask(__name__)
 PATH = "../shared/img/"
 
 def get_image_files(folder):
-    return [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    return sorted([f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))])
 
 with open("../shared/settings.txt", "r") as f:
     settings = f.read()
@@ -71,10 +71,35 @@ def index():
                         images.forEach(image => {
                             const div = document.createElement('div');
                             div.className = 'image';
-                            div.innerHTML = `<img src='allSkyCamera/shared/img/${image}'><br><span>${image}</span>`;
+                            div.innerHTML = `<img src='allSkyCamera/shared/img/${image}' onclick='displayFullScreen(this)'><br><span>${image}</span>`;
                             gallery.appendChild(div);
                         });
                     });
+            }
+
+            function displayFullScreen(imgElement) {
+                const fullScreenDiv = document.createElement('div');
+                fullScreenDiv.style.position = 'fixed';
+                fullScreenDiv.style.top = '0';
+                fullScreenDiv.style.left = '0';
+                fullScreenDiv.style.width = '100%ds';
+                fullScreenDiv.style.height = '100%ds';
+                fullScreenDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                fullScreenDiv.style.display = 'flex';
+                fullScreenDiv.style.justifyContent = 'center';
+                fullScreenDiv.style.alignItems = 'center';
+                fullScreenDiv.style.zIndex = '1000';
+                fullScreenDiv.onclick = function() {
+                    document.body.removeChild(fullScreenDiv);
+                };
+
+                const fullScreenImg = document.createElement('img');
+                fullScreenImg.src = imgElement.src;
+                fullScreenImg.style.maxWidth = '100%ds';
+                fullScreenImg.style.maxHeight = '100%ds';
+
+                fullScreenDiv.appendChild(fullScreenImg);
+                document.body.appendChild(fullScreenDiv);
             }
 
             document.getElementById('inputForm').addEventListener('submit', function(event) {
@@ -97,7 +122,7 @@ def index():
                 document.getElementById('field4').value = field4Value;
             }
 
-            setFieldValues('%s', '%s', '%s', '%s');
+            setFieldValues(exposure_, gain_, offset_, interval_);
 
             document.getElementById('downloadButton').addEventListener('click', function() {
                 window.location.href = '/download_images';
@@ -108,7 +133,7 @@ def index():
         </script>
     </body>
     </html>
-    """ % (EXPOSURE, GAIN, OFFSET, INTERVAL))
+    """.replace("exposure_", EXPOSURE).replace("gain_", GAIN).replace("offset_", OFFSET).replace("interval_", INTERVAL))
 
 @app.route('/images')
 def images():
@@ -118,11 +143,12 @@ def images():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    field1 = request.form.get('field1')
-    field2 = request.form.get('field2')
-    field3 = request.form.get('field3')
-    field4 = request.form.get('field4')
-    content = field2 + " " + field3 + " " + field1.replace(",", "") + " " + field4
+    global GAIN, OFFSET, EXPOSURE, INTERVAL
+    EXPOSURE = request.form.get('field1')
+    GAIN = request.form.get('field2')
+    OFFSET = request.form.get('field3')
+    INTERVAL = request.form.get('field4')
+    content = GAIN + " " + OFFSET + " " + EXPOSURE.replace(",", "") + " " + INTERVAL
     with open("../shared/settings.txt", "w") as f:
         f.write(content)
     return jsonify(success=True)
