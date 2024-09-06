@@ -23,14 +23,17 @@ PATH = "../shared/img/"
 def get_image_files(folder):
     return sorted([f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))])
 
-with open("../shared/settings.txt", "r") as f:
-    settings = f.read()
 
-GAIN, OFFSET, EXPOSURE, INTERVAL = settings.split(" ")
-EXPOSURE = f"{int(EXPOSURE):,}"
+GAIN, OFFSET, EXPOSURE, INTERVAL = 10, 140, 20_000, 3
 
 @app.route('/')
 def index():
+    global GAIN, OFFSET, EXPOSURE, INTERVAL
+    with open("../shared/settings.txt", "r") as f:
+        settings = f.read()
+
+    GAIN, OFFSET, EXPOSURE, INTERVAL = settings.split(" ")
+    EXPOSURE = f"{int(EXPOSURE):,}"
     return render_template_string("""
     <!DOCTYPE html>
     <html>
