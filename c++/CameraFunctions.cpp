@@ -6,7 +6,7 @@
 
 // functions that are to be called from Python
 extern "C" {
-    unsigend int* SDKVersion();
+    unsigned int* SDKVersion();
 }
 
 unsigned int* SDKVersion() {
