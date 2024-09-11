@@ -9,7 +9,7 @@
 #include <string.h>
 
 extern "C" {
-    unsigned char* SDKVersion();
+    unsigned int* SDKVersion();
 }
 
 #endif // CAMERA_FUNCTIONS_H
