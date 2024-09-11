@@ -13,17 +13,21 @@ OPENCV = -L/usr/local/lib -lopencv_core -lopencv_imgproc
 
 CP = cp -f
 
-OBJA = $(EXEC).o
+OBJA = $(EXEC).so
 
 
-all: $(EXEC) 
+all: $(EXEC) libcamera.so
 
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+$(OBJA): CameraFunctions.cpp
+	$(CXX) -o libcamera.so -fPIC CameraFunctions.cpp $(EXTRALIBS) $(OPENCV) -shared
 
+#all: $(EXEC)
 
-$(EXEC): $(OBJA) 
-	$(CXX) -o SingleFrameMode $(OBJA) $(EXTRALIBS) $(OPENCV)
+#.cpp.o:
+#	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+#$(EXEC): $(OBJA)
+#	$(CXX) -o Single $(OBJA) $(EXTRALIBS) $(OPENCV)
 
 install:
 #	$(CP) $(EXEC)
@@ -33,3 +37,5 @@ clean:
 	-$(RM) *.o
 	-$(RM) *~
 	-$(RM) *.orig
+
+
