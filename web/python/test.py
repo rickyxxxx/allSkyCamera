@@ -4,7 +4,7 @@ import ctypes
 lib = ctypes.CDLL('../../c++/libcamera.so')
 
 # Specify the return type of the SDKVersion function
-lib.SDKVersion.restype = ctypes.POINTER(ctypes.c_uint * 4)
+# lib.SDKVersion.restype = ctypes.POINTER(ctypes.c_uint * 4)
 
 # Call the SDKVersion function
 sdk_version_ptr = lib.SDKVersion()
