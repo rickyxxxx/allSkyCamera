@@ -1,4 +1,4 @@
-EXEC = SingleFrameMode
+EXEC = libcamera
 SHARED_MODE=0
 
 COMP_INC1 = /usr/include/
@@ -16,7 +16,7 @@ CP = cp -f
 OBJA = $(EXEC).so
 
 
-all: $(EXEC) libcamera.so
+all: libcamera.so
 
 $(OBJA): CameraFunctions.cpp
 	$(CXX) -o libcamera.so -fPIC CameraFunctions.cpp $(EXTRALIBS) $(OPENCV) -shared
