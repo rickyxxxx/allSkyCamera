@@ -6,7 +6,7 @@
 
 // functions that are to be called from Python
 extern "C" {
-    std::string SDKVersion();
+    const char* SDKVersion();
 }
 
 const char* SDKVersion() {
