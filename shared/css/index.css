@@ -1,0 +1,57 @@
+#galleryContent {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+}
+.image-container {
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+}
+.image-container img {
+    margin-right: 10px;
+}
+.image-container div {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+}
+body {
+    display: flex;
+}
+#navbar {
+    width: 200px;
+    padding: 10px;
+    border-right: 1px solid #ccc;
+}
+#content {
+    flex-grow: 1;
+    padding: 10px;
+}
+.tab {
+    cursor: pointer;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+.tab:hover {
+    background-color: #f0f0f0;
+}
+.tab.active {
+    background-color: #ddd;
+}
+.image {
+    margin: 10px;
+    text-align: center;
+}
+.image img {
+    max-width: 200px;
+    max-height: 200px;
+    display: block;
+    margin: 0 auto;
+}
+
+.star-image {
+    width: 20px;
+    height: 20px;
+}
