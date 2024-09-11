@@ -1,15 +1,18 @@
 import ctypes
+import numpy as np
+
 
 # Load the shared library
 lib = ctypes.CDLL('../../c++/libcamera.so')
 
-# Specify the return type of the SDKVersion function
-# lib.SDKVersion.restype = ctypes.POINTER(ctypes.c_uint * 4)
 
-# Call the SDKVersion function
-sdk_version_ptr = lib.SDKVersion()
+def get_sdk_version() -> str:
+    sdk_version = np.zeros(4, dtype=np.uint32)
+    ptr = sdk_version.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+    lib.SDKVersion(ptr)
+    print(f"Version: {sdk_version}")
+    return None
 
-# Convert the result to a Python list
-sdk_version = list(sdk_version_ptr.contents)
 
-print(f"Version: {sdk_version}")
+if __name__ == "__main__":
+    getSDKVersion()

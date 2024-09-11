@@ -6,11 +6,9 @@
 
 // functions that are to be called from Python
 extern "C" {
-    unsigned int* SDKVersion();
+    void SDKVersion(unsigned int*);
 }
 
-unsigned int* SDKVersion() {
-    unsigned int YMDS[4];
-    GetQHYCCDSDKVersion(&YMDS[0], &YMDS[1], &YMDS[2], &YMDS[3]);
-    return YMDS;
+void SDKVersion(unsigned int* version) {
+    GetQHYCCDSDKVersion(&version[0], &version[1], &version[2], &version[3]);
 }
