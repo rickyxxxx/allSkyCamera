@@ -15,4 +15,4 @@ def get_sdk_version() -> str:
 
 
 if __name__ == "__main__":
-    getSDKVersion()
+    get_sdk_version()
