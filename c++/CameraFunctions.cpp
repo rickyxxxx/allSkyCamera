@@ -9,7 +9,7 @@ extern "C" {
     std::string SDKVersion();
 }
 
-std::string SDKVersion() {
+const char* SDKVersion() {
     unsigned int YMDS[4];
     unsigned char sVersion[80];
 
@@ -26,5 +26,5 @@ std::string SDKVersion() {
         sprintf((char *)sVersion, "V20%d%d%d_%d\n", YMDS[0], YMDS[1], YMDS[2], YMDS[3]);
     }
 
-    return std::string((char *)sVersion);
+    return sVersion;
 }

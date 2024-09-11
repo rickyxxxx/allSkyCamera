@@ -9,7 +9,7 @@
 #include <string.h>
 
 extern "C" {
-    std::string SDKVersion();
+    const char* SDKVersion();
 }
 
 #endif // CAMERA_FUNCTIONS_H
