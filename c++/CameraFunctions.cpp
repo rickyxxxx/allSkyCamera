@@ -6,10 +6,10 @@
 
 // functions that are to be called from Python
 extern "C" {
-    const char* SDKVersion();
+    unsigned char* SDKVersion();
 }
 
-const char* SDKVersion() {
+unsigned char* SDKVersion() {
     unsigned int YMDS[4];
     unsigned char sVersion[80];
 
