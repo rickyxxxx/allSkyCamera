@@ -86,6 +86,8 @@ unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, doub
 }
 
 unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *binMode, int *settings, char *pImgData) {
+    uint32_t bpp = 16;
+
     // check usb traffic
     unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_USBTRAFFIC);
     if (QHYCCD_SUCCESS != retVal)
@@ -107,7 +109,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
     if (QHYCCD_SUCCESS != retVal)
         return 5;       // error checking the camera's bit resolution
-    retVal = SetQHYCCDBitsMode(pCamHandle, 16);
+    retVal = SetQHYCCDBitsMode(pCamHandle, bpp);
     if (QHYCCD_SUCCESS != retVal)
         return 6;       // error setting the camera's bit resolution
 
@@ -148,7 +150,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
 
     // get single frame
     unsigned int channels = 1;
-    retVal = GetQHYCCDSingleFrame(pCamHandle, &expRegion[2], &expRegion[3], 16, &channels, pImgData);
+    retVal = GetQHYCCDSingleFrame(pCamHandle, &expRegion[2], &expRegion[3], &bpp, &channels, pImgData);
     if (QHYCCD_SUCCESS != retVal)
         return 13;      // error getting the camera's single frame
 
