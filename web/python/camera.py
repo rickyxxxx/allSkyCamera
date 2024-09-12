@@ -172,7 +172,6 @@ if __name__ == "__main__":
     for i in range(10):
         input("Press Enter to take a picture")
         img = camera.expose(22000)
-        plt.imshow(img)
-        plt.show()
+        plt.imsave(f"img_{i}.png", img)
 
 
