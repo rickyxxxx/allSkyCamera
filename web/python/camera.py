@@ -41,6 +41,8 @@ class Camera:
         # self.funcs.FirmwareVersion.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint)]
 
         self.funcs.getChipInfo.restype = ctypes.c_uint
+        self.funcs.initCamera.restype = ctypes.c_uint
+        self.funcs.expose.restype = ctypes.c_uint
 
     def _get_camera_id(self) -> str:
         camera_id = ctypes.create_string_buffer(32)
@@ -79,10 +81,16 @@ class Camera:
         cam = bytes(self.camera_id, encoding='utf-8')
         cam_ptr = self.funcs.connectCamera(cam)
 
-        print("cam_ptr type: ", type(cam_ptr))
-
         if not cam_ptr:
-            raise RuntimeError("Failed to connect to the camera")
+            raise RuntimeError("Failed to get the camera's handle")
+
+        self.connected = True
+
+        retVal = self.funcs.initCamera(cam_ptr)
+        if retVal == 1:
+            raise RuntimeError("Failed to set the camera's stream mode")
+        elif retVal == 2:
+            raise RuntimeError("Failed to initialize the camera")
 
         return cam_ptr
 
@@ -92,11 +100,60 @@ class Camera:
     def _release_sdk(self) -> None:
         pass
 
-    def exposure(self) -> np.ndarray:
-        pass
+    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), bbp=16, gain=140, offset=10) -> np.ndarray:
+        if exp_region is None:
+            exp_region = (0, 0, self.resolution[0], self.resolution[1])
+
+        """for exp_region: (start_x, start_y, width, height)"""
+        settings = np.array([gain, offset, exposure], dtype=np.int32)
+        p_settings = settings.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
+
+        exp_region = np.array(exp_region, dtype=np.uint32)
+        p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+
+        bin_mode = np.array(bin_mode, dtype=np.int32)
+        p_bin_mode = bin_mode.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
+
+        pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
+        p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
+
+        retVal = self.funcs.expose(self.cam_ptr, p_exp_region, p_bin_mode, bbp, p_settings, p_pixels)
+        match retVal:
+            case 0:
+                return pixels.reshape(exp_region[3], exp_region[2])
+            case 1:
+                raise RuntimeError("USB communication error")
+            case 2:
+                raise RuntimeError("Error setting the USB speed")
+            case 3:
+                raise RuntimeError("Error setting the resolution")
+            case 4:
+                raise RuntimeError("Error setting the binning mode")
+            case 5:
+                raise RuntimeError("Error checking the camera's bit depth")
+            case 6:
+                raise RuntimeError("Error setting the camera's bit depth")
+            case 7:
+                raise RuntimeError("Error checking the camera's gain")
+            case 8:
+                raise RuntimeError("Error setting the camera's gain")
+            case 9:
+                raise RuntimeError("Error checking the camera's offset")
+            case 10:
+                raise RuntimeError("Error setting the camera's offset")
+            case 11:
+                raise RuntimeError("Error setting the camera's exposure time")
+            case 12:
+                raise RuntimeError("Error starting the exposure")
+            case 13:
+                raise RuntimeError("Error reading the data")
+            case _:
+                raise RuntimeError("Unknown error")
 
     def close(self) -> None:
-        pass
+        if self.connected:
+            self._disconnect_camera()
+        self._release_sdk()
 
     def info(self) -> str:
         return (f"Camera ID: {self.camera_id}\n"
@@ -111,4 +168,5 @@ if __name__ == "__main__":
     import os
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
+    camera.expose(22000)
 
