@@ -165,7 +165,7 @@ unsigned int setExposureTime(qhyccd_handle *pCamHandle, int exposureTime) {
     return 0;
 }
 
-unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData, uint32_t bbp, unsigned int *expRegion) {
+unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData, uint32_t bpp, unsigned int *expRegion) {
 
     // single frame
     printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
