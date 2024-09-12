@@ -118,7 +118,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
     if (retVal != QHYCCD_SUCCESS)
         return 7;       // error checking the camera's gain
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, *settings[0]);
     if (QHYCCD_SUCCESS != retVal)
         getchar();
         return 8;       // error setting the camera's gain
@@ -127,13 +127,13 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
     if (QHYCCD_SUCCESS != retVal)
         return 9;       // error checking the camera's offset
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, settings[1]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, *settings[1]);
     if (QHYCCD_SUCCESS != retVal)
         getchar();
         return 10;      // error setting the camera's offset
 
     // set exposure time
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, settings[2]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, *settings[2]);
     if (QHYCCD_SUCCESS != retVal)
         getchar();
         return 11;      // error setting the camera's exposure time
