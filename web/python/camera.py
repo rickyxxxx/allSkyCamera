@@ -12,7 +12,8 @@ class Camera:
         self.sdk_version = self._get_sdk_version()
         self.camera_id = self._get_camera_id()
         self.cam_ptr = self._connect_camera()
-        self.firmware_version = self._get_firmware_version()
+        self._get_chip_info()
+        # self.firmware_version = self._get_firmware_version()
 
     def _get_sdk_version(self) -> str:
         sdk_version = np.zeros(4, dtype=np.uint32)
@@ -39,25 +40,33 @@ class Camera:
 
         self.funcs.FirmwareVersion.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint)]
 
+        self.funcs.getChipInfo.restype = ctypes.c_uint
+
     def _get_camera_id(self) -> str:
         camera_id = ctypes.create_string_buffer(32)
-        result = self.funcs.getCameraId(camera_id)
+        retVal = self.funcs.getCameraId(camera_id)
 
-        if result == 0:
+        if retVal == 0:
             return camera_id.value.decode("utf-8")
-        elif result == 1:
+        elif retVal == 1:
             raise RuntimeError("Failed to initialize QHYCCD SDK")
-        elif result == 2:
+        elif retVal == 2:
             raise RuntimeError("No camera found")
-        elif result == 3:
+        elif retVal == 3:
             raise RuntimeError("Detected devices are not supported")
-        elif result == 4:
+        elif retVal == 4:
             raise RuntimeError("SDK cannot be released")
         else:
             raise RuntimeError("Unknown error")
 
-    def get_chip_info(self) -> str:
-        pass
+    def _get_chip_info(self) -> None:
+        scan_info = np.zeros(7, dtype=np.uint32)
+        p_scan_info = scan_info.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+        chip_info = np.zeros(4, dtype=np.float64)
+        p_chip_info = chip_info.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+
+        retVal = self.funcs.getChipInfo(self.cam_ptr, p_scan_info, p_chip_info)
+        print(scan_info, chip_info)
 
     def _connect_camera(self) -> any:
         cam = bytes(self.camera_id, encoding='utf-8')
