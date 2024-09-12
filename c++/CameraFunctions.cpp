@@ -17,7 +17,7 @@ extern "C" {
     qhyccd_handle* connectCamera(char *);
     unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     unsigned int initCamera(qhyccd_handle *);
-    unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, char *) {
+    unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, char *);
 }
 
 
