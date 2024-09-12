@@ -244,8 +244,9 @@ if __name__ == "__main__":
     import os
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
-    for i in range(10):
-        img, c_exposure_time = camera.expose(22000)
+    for i in range(8):
+        exp_time = 220 * (2 ** i)
+        img, c_exposure_time = camera.expose(exp_time)
         print(f"Exposure time: {c_exposure_time:.2f} seconds")
         start = time.time()
         camera.array_to_fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
