@@ -133,13 +133,12 @@ class Camera:
         if retVal:
             raise RuntimeError("Error setting exposure")
 
-    def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> ctypes.POINTER(ctypes.c_uint32):
+    def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> None:
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         retVal = self.funcs.setResolution(self.cam_ptr, p_exp_region)
         if retVal:
             raise RuntimeError("Error setting resolution")
-        return p_exp_region
 
     def _set_bin_mode(self, bin_mode: tuple[int, int]) -> None:
         bin_mode = np.array(bin_mode, dtype=np.int32)
@@ -164,7 +163,7 @@ class Camera:
             self.binMode = bin_mode
 
         if self.expRegion != exp_region:
-            p_exp_region = self._set_exp_region(exp_region)
+            self._set_exp_region(exp_region)
             self.expRegion = exp_region
 
         if self.bitDepth != bbp:
@@ -186,6 +185,9 @@ class Camera:
         """for exp_region: (start_x, start_y, width, height)"""
         pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
         p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
+
+        exp_region = np.array(exp_region, dtype=np.uint32)
+        p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
 
         exposure_start = time.time()
         retVal = self.funcs.expose(self.cam_ptr, p_pixels, bbp, p_exp_region)
