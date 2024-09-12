@@ -17,10 +17,16 @@ extern "C" {
     qhyccd_handle* connectCamera(char *);
     unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     unsigned int initCamera(qhyccd_handle *);
-    unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, unsigned char *);
+    unsigned int expose(qhyccd_handle *, unsigned char *);
     void disconnectCamera(qhyccd_handle *pCamHandle);
     void releaseSDK();
-
+    unsigned int checkTraffic(qhyccd_handle *);
+    unsigned int setResolution(qhyccd_handle *, unsigned int *);
+    unsigned int setBinMode(qhyccd_handle *, int *);
+    unsigned int setBitDepth(qhyccd_handle *, uint32_t);
+    unsigned int setGain(qhyccd_handle *, int);
+    unsigned int setOffset(qhyccd_handle *, int);
+    unsigned int setExposureTime(qhyccd_handle *, int);
 }
 
 
@@ -88,10 +94,7 @@ unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, doub
     return 0;
 }
 
-unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *binMode, int *settings,
-                    unsigned char *pImgData) {
-    uint32_t bpp = 16;
-
+unsigned int checkTraffic(qhyccd_handle *pCamHandle) {
     // check usb traffic
     unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_USBTRAFFIC);
     if (QHYCCD_SUCCESS != retVal)
@@ -101,56 +104,77 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     if (QHYCCD_SUCCESS != retVal)
         return 2;       // error setting the camera's usb traffic
 
+    return 0;
+}
+
+unsigned int setResolution(qhyccd_handle *pCamHandle, unsigned int *expRegion) {
     retVal = SetQHYCCDResolution(pCamHandle, expRegion[0], expRegion[1], expRegion[2], expRegion[3]);
-    if (QHYCCD_SUCCESS != retVal)
-        return 3;       // error setting the camera's resolution
+    return QHYCCD_SUCCESS == retVal ? 0 : 1;
+}
 
+unsigned int setBinMode(qhyccd_handle *pCamHandle, int *binMode) {
     retVal = SetQHYCCDBinMode(pCamHandle, binMode[0], binMode[1]);
-    if (QHYCCD_SUCCESS != retVal)
-        return 4;       // error setting the camera's bin mode
+    return QHYCCD_SUCCESS == retVal ? 0 : 1;
+}
 
+unsigned int setBitDepth(qhyccd_handle *pCamHandle, uint32_t bpp) {
     // check and set bit resolution
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
     if (QHYCCD_SUCCESS != retVal)
-        return 5;       // error checking the camera's bit resolution
+        return 1;       // error checking the camera's bit resolution
     retVal = SetQHYCCDBitsMode(pCamHandle, bpp);
     if (QHYCCD_SUCCESS != retVal)
-        return 6;       // error setting the camera's bit resolution
+        return 2;       // error setting the camera's bit resolution
 
+    return 0;
+}
+
+unsigned int setGain(qhyccd_handle *pCamHandle, int gain) {
+    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
+    if (retVal != QHYCCD_SUCCESS)
+        return 1;       // error checking the camera's gain
+    printf("Gain: %d\n", settings[0]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, gain);
+    if (QHYCCD_SUCCESS != retVal) {
+        getchar();
+        return 2;       // error setting the camera's gain
+    }
+
+    return 0;
+}
+
+unsigned int setOffset(qhyccd_handle *pCamHandle, int offset) {
     // check and set gain
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
     if (retVal != QHYCCD_SUCCESS)
-        return 7;       // error checking the camera's gain
+        return 1;       // error checking the camera's gain
     printf("Gain: %d\n", settings[0]);
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, offset);
     if (QHYCCD_SUCCESS != retVal) {
         getchar();
-        return 8;       // error setting the camera's gain
+        return 2;       // error setting the camera's gain
     }
 
-    // check and set offset
-    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
-    if (QHYCCD_SUCCESS != retVal)
-        return 9;       // error checking the camera's offset
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, settings[1]);
-    if (QHYCCD_SUCCESS != retVal) {
-        getchar();
-        return 10;      // error setting the camera's offset
-    }
+    return 0;
+}
 
-    // set exposure time
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, settings[2]);
+unsigned int setExposureTime(qhyccd_handle *pCamHandle, int exposureTime) {
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, exposureTime);
     if (QHYCCD_SUCCESS != retVal){
         getchar();
-        return 11;      // error setting the camera's exposure time
+        return 1;      // error setting the camera's exposure time
     }
+    return 0;
+}
+
+unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData) {
 
     // single frame
     printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
     retVal = ExpQHYCCDSingleFrame(pCamHandle);
     printf("ExpQHYCCDSingleFrame(pCamHandle) - end...\n");
     if (retVal == QHYCCD_ERROR){
-        return 12;      // error exposing the camera's single frame
+        return 1;      // error exposing the camera's single frame
     }else if (retVal != QHYCCD_READ_DIRECTLY){
         sleep(1);
     }
@@ -159,7 +183,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     unsigned int channels = 1;
     retVal = GetQHYCCDSingleFrame(pCamHandle, &expRegion[2], &expRegion[3], &bpp, &channels, pImgData);
     if (QHYCCD_SUCCESS != retVal)
-        return 13;      // error getting the camera's single frame
+        return 2;      // error getting the camera's single frame
 
     return 0;
 }

@@ -19,6 +19,14 @@ class Camera:
         self._get_chip_info()
         # self.firmware_version = self._get_firmware_version()
 
+        self.connected = False
+        self.binMode = None
+        self.expRegion = None
+        self.bitDepth = None
+        self.gain = None
+        self.offset = None
+        self.exposureTime = None
+
     def _get_sdk_version(self) -> str:
         sdk_version = np.zeros(4, dtype=np.uint32)
         ptr = sdk_version.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
@@ -96,6 +104,7 @@ class Camera:
         elif retVal == 2:
             raise RuntimeError("Failed to initialize the camera")
 
+        self._check_traffic()
         return cam_ptr
 
     def _disconnect_camera(self) -> None:
@@ -104,56 +113,91 @@ class Camera:
     def _release_sdk(self) -> None:
         self.funcs.releaseSDK()
 
-    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> tuple[np.ndarray, float]:
-        if exp_region is None:
-            exp_region = (0, 0, self.resolution[0], self.resolution[1])
+    def _check_traffic(self) -> None:
+        retVal = self.funcs.checkTraffic(self.cam_ptr)
+        if retVal:
+            raise RuntimeError("usb traffic jam detected")
 
-        """for exp_region: (start_x, start_y, width, height)"""
-        settings = np.array([gain, offset, exposure], dtype=np.int32)
-        p_settings = settings.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
+    def _set_gain(self, gain: int) -> None:
+        retVal = self.funcs.setGain(self.cam_ptr, gain)
+        if retVal:
+            raise RuntimeError("Error setting gain")
 
+    def _set_offset(self, offset: int) -> None:
+        retVal = self.funcs.setOffset(self.cam_ptr, offset)
+        if retVal:
+            raise RuntimeError("Error setting offset")
+
+    def _set_exposure(self, exposureTime: int) -> None:
+        if not (22 < exposureTime < 100000000):
+            raise ValueError("Offset must be between 22us and 100s")
+        retVal = self.funcs.setExposure(self.cam_ptr, exposureTime)
+        if retVal:
+            raise RuntimeError("Error setting exposure")
+
+    def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> None:
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+        retVal = self.funcs.setResolution(self.cam_ptr, p_exp_region)
+        if retVal:
+            raise RuntimeError("Error setting resolution")
 
+    def _set_bin_mode(self, bin_mode: tuple[int, int]) -> None:
         bin_mode = np.array(bin_mode, dtype=np.int32)
         p_bin_mode = bin_mode.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
 
+        retVal = self.funcs.setBinMode(self.cam_ptr, p_bin_mode)
+        if retVal:
+            raise RuntimeError("Error setting bin mode")
+
+    def _set_bit_depth(self, bit_depth: int) -> None:
+        retVal = self.funcs.setBitDepth(self.cam_ptr, bit_depth)
+        if retVal:
+            raise RuntimeError("Error setting bit depth")
+
+    def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> tuple[np.ndarray, float]:
+        if exp_region is None:
+            exp_region = (0, 0, self.resolution[0], self.resolution[1])
+
+        if self.binMode != bin_mode:
+            self._set_bin_mode(bin_mode)
+            self.binMode = bin_mode
+
+        if self.expRegion != exp_region:
+            self._set_exp_region(exp_region)
+            self.expRegion = exp_region
+
+        if self.bitDepth != 16:
+            self._set_bit_depth(16)
+            self.bitDepth = 16
+
+        if self.gain != gain:
+            self._set_gain(gain)
+            self.gain = gain
+
+        if self.offset != offset:
+            self._set_offset(offset)
+            self.offset = offset
+
+        if self.exposureTime != exposureTime:
+            self._set_exposure(exposureTime)
+            self.exposureTime = exposureTime
+
+        """for exp_region: (start_x, start_y, width, height)"""
         pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
         p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
 
         exposure_start = time.time()
-        retVal = self.funcs.expose(self.cam_ptr, p_exp_region, p_bin_mode, p_settings, p_pixels)
+        retVal = self.funcs.expose(self.cam_ptr, p_pixels)
         actual_exposure = time.time() - exposure_start
 
         match retVal:
             case 0:
                 return pixels.reshape(exp_region[3], exp_region[2]), actual_exposure
             case 1:
-                raise RuntimeError("USB communication error")
+                raise RuntimeError("Error starting exposure")
             case 2:
-                raise RuntimeError("Error setting the USB speed")
-            case 3:
-                raise RuntimeError("Error setting the resolution")
-            case 4:
-                raise RuntimeError("Error setting the binning mode")
-            case 5:
-                raise RuntimeError("Error checking the camera's bit depth")
-            case 6:
-                raise RuntimeError("Error setting the camera's bit depth")
-            case 7:
-                raise RuntimeError("Error checking the camera's gain")
-            case 8:
-                raise RuntimeError("Error setting the camera's gain")
-            case 9:
-                raise RuntimeError("Error checking the camera's offset")
-            case 10:
-                raise RuntimeError("Error setting the camera's offset")
-            case 11:
-                raise RuntimeError("Error setting the camera's exposure time")
-            case 12:
-                raise RuntimeError("Error starting the exposure")
-            case 13:
-                raise RuntimeError("Error reading the data")
+                raise RuntimeError("Error reading data")
             case _:
                 raise RuntimeError("Unknown error")
 
