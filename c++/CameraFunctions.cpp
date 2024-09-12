@@ -7,7 +7,7 @@
 // functions that are to be called from Python
 extern "C" {
     void SDKVersion(unsigned int*);
-    unsigned int loadCameras(char*);
+    unsigned int loadCameraId(char*);
 }
 
 void SDKVersion(unsigned int* version) {
