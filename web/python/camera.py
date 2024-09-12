@@ -1,7 +1,6 @@
 import time
 import ctypes
 
-import cv2
 import numpy as np
 from astropy.io import fits
 
@@ -187,7 +186,7 @@ if __name__ == "__main__":
         img = camera.expose(22000)
         print(f"{time.time() - start:.2f} seconds to get image")
         start = time.time()
-        camera.array2Fits(img, f"{os.environ['ALL_SKY_CAMERA']}/sharerd/img/pic_{i}")
+        camera.array2Fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
         print(f"{time.time() - start:.2f} seconds to save")
     camera.close()
 

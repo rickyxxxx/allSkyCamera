@@ -2,3 +2,5 @@ flask~=3.0.3
 numpy~=2.1.1
 tqdm~=4.66.5
 pillow~=10.4.0
+opencv-python~=4.10.0.84
+astropy~=6.1.3
