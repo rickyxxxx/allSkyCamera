@@ -21,10 +21,22 @@ def get_camera_id() -> str:
     camera_id = ctypes.create_string_buffer(32)
     result = lib.loadCameraId(camera_id)
 
-    print(result, camera_id.value)
-
+    match result:
+        case 0:
+            return camera_id.value.decode("utf-8")
+        case 1:
+            raise RuntimeError("Failed to initialize QHYCCD SDK")
+        case 2:
+            raise RuntimeError("No camera found")
+        case 3:
+            raise RuntimeError("Detected devices are not supported")
+        case 4:
+            raise RuntimeError("SDK cannot be released")
+        case _:
+            raise RuntimeError("Unknown error")
 
 
 if __name__ == "__main__":
     get_sdk_version()
-    get_camera_id()
+    camera_id = get_camera_id()
+    print(camera_id)
