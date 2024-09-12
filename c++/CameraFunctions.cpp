@@ -2,7 +2,11 @@
 // Created by Ruitao Xu on 9/11/2024.
 //
 #include <string.h>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "qhyccd.h"
 
 
@@ -103,7 +107,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
     if (QHYCCD_SUCCESS != retVal)
         return 5;       // error checking the camera's bit resolution
-    retVal = SetQHYCCDBitsMode(pCamHandle, bpp);
+    retVal = SetQHYCCDBitsMode(pCamHandle, 16);
     if (QHYCCD_SUCCESS != retVal)
         return 6;       // error setting the camera's bit resolution
 
@@ -136,10 +140,11 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
     retVal = ExpQHYCCDSingleFrame(pCamHandle);
     printf("ExpQHYCCDSingleFrame(pCamHandle) - end...\n");
-    if (retVal == QHYCCD_ERROR)
+    if (retVal == QHYCCD_ERROR){
         return 12;      // error exposing the camera's single frame
-    else if (retVal != QHYCCD_READ_DIRECTLY)
+    }else if (retVal != QHYCCD_READ_DIRECTLY){
         sleep(1);
+    }
 
     // get single frame
     unsigned int channels = 1;
