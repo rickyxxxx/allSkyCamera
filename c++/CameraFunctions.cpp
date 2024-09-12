@@ -49,7 +49,7 @@ void SDKVersion(unsigned int *version) {
 //}
 
 void FirmwareVersion(qhyccd_handle *pCamHandle, unsigned char *version) {
-    GetQHYCCDFWVersion(pCamHandle, &version[0], &version[1], &version[2], &version[3]);
+    GetQHYCCDFWVersion(pCamHandle, version);
 }
 
 unsigned int getCameraId(char *camId) {
