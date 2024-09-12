@@ -95,10 +95,10 @@ class Camera:
         return cam_ptr
 
     def _disconnect_camera(self) -> None:
-        pass
+        self.funcs.disconnectCamera(self.cam_ptr)
 
     def _release_sdk(self) -> None:
-        pass
+        self.funcs.releaseSDK()
 
     def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> np.ndarray:
         if exp_region is None:
@@ -170,8 +170,8 @@ if __name__ == "__main__":
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
     for i in range(10):
-        input("Press Enter to take a picture")
         img = camera.expose(22000)
         plt.imsave(f"img_{i}.png", img)
+    camera.close()
 
 

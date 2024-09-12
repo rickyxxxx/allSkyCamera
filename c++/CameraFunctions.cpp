@@ -18,6 +18,9 @@ extern "C" {
     unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     unsigned int initCamera(qhyccd_handle *);
     unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, unsigned char *);
+    void disconnectCamera(qhyccd_handle *pCamHandle);
+    void releaseSDK();
+
 }
 
 
@@ -161,3 +164,11 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     return 0;
 }
 
+
+void disconnectCamera(qhyccd_handle *pCamHandle) {
+    CloseQHYCCD(pCamHandle);
+}
+
+void releaseSDK() {
+    ReleaseQHYCCDResource();
+}
