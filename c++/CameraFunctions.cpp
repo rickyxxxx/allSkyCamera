@@ -126,19 +126,9 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
       {
         printf("SetQHYCCDParam CONTROL_GAIN failure, error: %d\n", retVal);
         getchar();
-        return 1;
+        return 8;
       }
     }
-
-    // check and set gain
-    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
-    if (retVal != QHYCCD_SUCCESS)
-        return 7;       // error checking the camera's gain
-    printf("Gain: %d\n", settings[0]);
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
-    if (QHYCCD_SUCCESS != retVal)
-        getchar();
-        return 8;       // error setting the camera's gain
 
     // check and set offset
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
