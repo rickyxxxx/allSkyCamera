@@ -43,16 +43,16 @@ def images():
     return jsonify(img_w_specs)
 
 
-@app.route("/star", methods=['POST'])
-def star():
-    with open(f"{PROJECT_PATH}/shared/img/image_info.json") as spec:
-        img_specs = json.load(spec)
-    current_state = img_specs[request.json["image"]]['star']
-    new_state = 1 - current_state
-    img_specs[request.json["image"]]['star'] = new_state
-    with open(f"{PROJECT_PATH}/shared/img/image_info.json", "w") as spec:
-        json.dump(img_specs, spec)
-    return jsonify(success=True)
+# @app.route("/star", methods=['POST'])
+# def star():
+#     with open(f"{PROJECT_PATH}/shared/img/image_info.json") as spec:
+#         img_specs = json.load(spec)
+#     current_state = img_specs[request.json["image"]]['star']
+#     new_state = 1 - current_state
+#     img_specs[request.json["image"]]['star'] = new_state
+#     with open(f"{PROJECT_PATH}/shared/img/image_info.json", "w") as spec:
+#         json.dump(img_specs, spec)
+#     return jsonify(success=True)
 
 
 # @app.route('/submit', methods=['POST'])
@@ -84,4 +84,5 @@ def star():
 
 
 if __name__ == '__main__':
+
     app.run(host='0.0.0.0', port=8080)

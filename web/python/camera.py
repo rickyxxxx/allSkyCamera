@@ -245,7 +245,7 @@ if __name__ == "__main__":
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
     for i in range(8):
-        exp_time = 220 * (10 ** i)
+        exp_time = 2200
         print(exp_time)
         img, c_exposure_time = camera.expose(exp_time)
         print(f"Exposure time: {c_exposure_time:.2f} seconds")
