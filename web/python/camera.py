@@ -135,12 +135,13 @@ class Camera:
         if retVal:
             raise RuntimeError("Error setting exposure")
 
-    def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> None:
+    def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> ctypes.POINTER(ctypes.c_uint32):
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         retVal = self.funcs.setResolution(self.cam_ptr, p_exp_region)
         if retVal:
             raise RuntimeError("Error setting resolution")
+        return p_exp_region
 
     def _set_bin_mode(self, bin_mode: tuple[int, int]) -> None:
         bin_mode = np.array(bin_mode, dtype=np.int32)
@@ -155,7 +156,8 @@ class Camera:
         if retVal:
             raise RuntimeError("Error setting bit depth")
 
-    def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> tuple[np.ndarray, float]:
+    def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140, bbp=16) \
+            -> tuple[np.ndarray, float]:
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
 
@@ -164,12 +166,12 @@ class Camera:
             self.binMode = bin_mode
 
         if self.expRegion != exp_region:
-            self._set_exp_region(exp_region)
+            p_exp_region = self._set_exp_region(exp_region)
             self.expRegion = exp_region
 
-        if self.bitDepth != 16:
-            self._set_bit_depth(16)
-            self.bitDepth = 16
+        if self.bitDepth != bbp:
+            self._set_bit_depth(bbp)
+            self.bitDepth = bbp
 
         if self.gain != gain:
             self._set_gain(gain)
@@ -188,7 +190,7 @@ class Camera:
         p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
 
         exposure_start = time.time()
-        retVal = self.funcs.expose(self.cam_ptr, p_pixels)
+        retVal = self.funcs.expose(self.cam_ptr, p_pixels, bbp, p_exp_region)
         actual_exposure = time.time() - exposure_start
 
         match retVal:
