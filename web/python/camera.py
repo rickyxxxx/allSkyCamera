@@ -38,7 +38,7 @@ class Camera:
         self.funcs.connectCamera.argtypes = [ctypes.c_char_p]
         self.funcs.connectCamera.restype = ctypes.c_void_p
 
-        self.funcs.FirmwareVersion.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint)]
+        # self.funcs.FirmwareVersion.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint)]
 
         self.funcs.getChipInfo.restype = ctypes.c_uint
 
