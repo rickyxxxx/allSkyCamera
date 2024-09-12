@@ -63,7 +63,7 @@ class Camera:
         cam = bytes(self.camera_id, encoding='utf-8')
         cam_ptr = self.funcs.connectCamera(cam)
 
-        print("type of pointer" + type(cam_ptr))
+        print("cam_ptr type: ", type(cam_ptr))
 
         if not cam_ptr:
             raise RuntimeError("Failed to connect to the camera")
