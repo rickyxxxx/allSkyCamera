@@ -120,7 +120,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
       retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
       if (retVal == QHYCCD_SUCCESS)
       {
-        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", CHIP_GAIN);
+        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", settings[0]);
       }
       else
       {
