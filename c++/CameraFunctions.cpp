@@ -7,7 +7,7 @@
 // functions that are to be called from Python
 extern "C" {
     void SDKVersion(unsigned int *);
-    void FirmwareVersion(qhyccd_handle *, unsigned int *);
+    void FirmwareVersion(qhyccd_handle *, unsigned char *);
     unsigned int getCameraId(char *);
     qhyccd_handle* connectCamera(char *);
 }
@@ -16,7 +16,39 @@ void SDKVersion(unsigned int *version) {
     GetQHYCCDSDKVersion(&version[0], &version[1], &version[2], &version[3]);
 }
 
-void FirmwareVersion(qhyccd_handle *pCamHandle, unsigned int *version) {
+//void FirmWareVersion(qhyccd_handle *h)
+//{
+//  int i = 0;
+//  unsigned char fwv[32],FWInfo[256];
+//  unsigned int ret;
+//  memset (FWInfo,0x00,sizeof(FWInfo));
+//  ret = GetQHYCCDFWVersion(h,fwv);
+//  if(ret == QHYCCD_SUCCESS)
+//  {
+//    if((fwv[0] >> 4) <= 9)
+//    {
+//
+//      sprintf((char *)FWInfo,"Firmware version:20%d_%d_%d\n",((fwv[0] >> 4) + 0x10),
+//              (fwv[0]&~0xf0),fwv[1]);
+//
+//    }
+//    else
+//    {
+//
+//      sprintf((char *)FWInfo,"Firmware version:20%d_%d_%d\n",(fwv[0] >> 4),
+//              (fwv[0]&~0xf0),fwv[1]);
+//
+//    }
+//  }
+//  else
+//  {
+//    sprintf((char *)FWInfo,"Firmware version:Not Found!\n");
+//  }
+//  fprintf(stderr,"%s\n", FWInfo);
+//
+//}
+
+void FirmwareVersion(qhyccd_handle *pCamHandle, unsigned char *version) {
     GetQHYCCDFWVersion(pCamHandle, &version[0], &version[1], &version[2], &version[3]);
 }
 
