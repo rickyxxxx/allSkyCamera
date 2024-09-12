@@ -54,8 +54,8 @@ qhyccd_handle* connectCamera(char *camId){
 
 unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
     // get chip info
-    retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1], &chipInfo[2],
-                               &chipInfo[3], &scanInfo[2]);
+    unsigned int retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
+                                            &chipInfo[2], &chipInfo[3], &scanInfo[2]);
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error getting the camera's chip info
 
