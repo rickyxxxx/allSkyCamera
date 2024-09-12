@@ -25,7 +25,6 @@ unsigned int loadCameraId(char* camId) {
     if (camCount == 0)
         return 2;      // no cameras found
 
-    char camId[32];
     for (int i = 0; i < camCount; ++i) {
         retVal = GetQHYCCDId(i, camId);
         if (retVal != QHYCCD_SUCCESS)
