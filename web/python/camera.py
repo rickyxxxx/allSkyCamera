@@ -70,10 +70,10 @@ class Camera:
         if retVal:
             raise RuntimeError("Failed to get chip info")
 
-        self.resolution = (scan_info[0], scan_info[1])
-        self.chip_size = (chip_info[0], chip_info[1])
-        self.pixel_size = (chip_info[2], chip_info[3])
-        self.max_depth = scan_info[2]
+        self.resolution = (int(scan_info[0]), int(scan_info[1]))
+        self.chip_size = (float(chip_info[0]), float(chip_info[1]))
+        self.pixel_size = (float(chip_info[2]), float(chip_info[3]))
+        self.max_depth = int(scan_info[2])
 
     def _connect_camera(self) -> any:
         cam = bytes(self.camera_id, encoding='utf-8')
