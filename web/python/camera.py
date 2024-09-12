@@ -1,6 +1,9 @@
-import ctypes
-import numpy as np
 import time
+import ctypes
+
+import cv2
+import numpy as np
+from astropy.io import fits
 
 
 class Camera:
@@ -168,10 +171,15 @@ class Camera:
                 f"Pixel Size: {self.pixel_size} um\n"
                 f"Max Depth: {self.max_depth} bit")
 
+    @staticmethod
+    def array2Fits(array: np.ndarray[np.uint16], filename: str) -> None:
+        hdu = fits.PrimaryHDU(array)
+        hudl = fits.HDUList([hdu])
+        hudl.writeto(f"{filename}.fits", overwrite=True)
+
 
 if __name__ == "__main__":
     import os
-    import matplotlib.pyplot as plt
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
     for i in range(10):
@@ -179,7 +187,7 @@ if __name__ == "__main__":
         img = camera.expose(22000)
         print(f"{time.time() - start:.2f} seconds to get image")
         start = time.time()
-        plt.imsave(f"img_{i}.png", img)
+        camera.array2Fits(img, f"{os.environ['ALL_SKY_CAMERA']}/sharerd/img/pic_{i}")
         print(f"{time.time() - start:.2f} seconds to save")
     camera.close()
 
