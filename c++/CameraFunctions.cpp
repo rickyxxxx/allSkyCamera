@@ -17,7 +17,7 @@ extern "C" {
     qhyccd_handle* connectCamera(char *);
     unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     unsigned int initCamera(qhyccd_handle *);
-    unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, char *);
+    unsigned int expose(qhyccd_handle *, unsigned int *, int *, int *, unsigned char *);
 }
 
 
@@ -85,7 +85,8 @@ unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, doub
     return 0;
 }
 
-unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *binMode, int *settings, char *pImgData) {
+unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *binMode, int *settings,
+                    unsigned char *pImgData) {
     uint32_t bpp = 16;
 
     // check usb traffic
