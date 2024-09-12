@@ -22,7 +22,7 @@ class Camera:
         return f"V20{sdk_version[0]}{sdk_version[1]:02}{sdk_version[2]:02}_{sdk_version[3]}"
 
     def _get_firmware_version(self) -> str:
-        firmware_version = np.zeros(4, dtype=np.uint32)
+        firmware_version = np.zeros(4, dtype=np.uint16)
         ptr = firmware_version.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         self.funcs.FirmwareVersion(self.cam_ptr, ptr)
 
@@ -89,6 +89,6 @@ class Camera:
 if __name__ == "__main__":
     import os
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
-    print(camera.sdk_version)
-    print(camera.camera_id)
+    print("sdk version: ", camera.sdk_version)
+    print("camera id: ", camera.camera_id)
 
