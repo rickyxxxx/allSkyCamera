@@ -9,7 +9,7 @@ extern "C" {
     void SDKVersion(unsigned int *);
     unsigned int getCameraId(char *);
     qhyccd_handle* connectCamera(char *);
-    unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *)
+    unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
 }
 
 void SDKVersion(unsigned int *version) {
@@ -54,7 +54,7 @@ qhyccd_handle* connectCamera(char *camId){
 
 unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
     // get effective area
-    unsigned int retVal = GetQHYCCDId(pCamHandle, &scanInfo[0], &scanInfo[1], &scanInfo[2], &scanInfo[3]);
+    unsigned int retVal = GetQHYCCDOverScanArea(pCamHandle, &scanInfo[0], &scanInfo[1], &scanInfo[2], &scanInfo[3]);
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error getting the camera's effective area
 
