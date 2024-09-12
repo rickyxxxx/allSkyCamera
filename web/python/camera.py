@@ -104,7 +104,10 @@ class Camera:
         elif retVal == 2:
             raise RuntimeError("Failed to initialize the camera")
 
-        self._check_traffic()
+        retVal = self.funcs.checkTraffic(cam_ptr)
+        if retVal:
+            raise RuntimeError("usb traffic jam detected")
+
         return cam_ptr
 
     def _disconnect_camera(self) -> None:
@@ -112,11 +115,6 @@ class Camera:
 
     def _release_sdk(self) -> None:
         self.funcs.releaseSDK()
-
-    def _check_traffic(self) -> None:
-        retVal = self.funcs.checkTraffic(self.cam_ptr)
-        if retVal:
-            raise RuntimeError("usb traffic jam detected")
 
     def _set_gain(self, gain: int) -> None:
         retVal = self.funcs.setGain(self.cam_ptr, gain)
