@@ -129,7 +129,7 @@ class Camera:
     def _set_exposure(self, exposureTime: int) -> None:
         if not (22 < exposureTime < 100000000):
             raise ValueError("Offset must be between 22us and 100s")
-        retVal = self.funcs.setExposure(self.cam_ptr, exposureTime)
+        retVal = self.funcs.setExposureTime(self.cam_ptr, exposureTime)
         if retVal:
             raise RuntimeError("Error setting exposure")
 
