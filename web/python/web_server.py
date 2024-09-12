@@ -2,7 +2,7 @@ import os
 import json
 from typing import Iterable
 
-from flask import Flask, send_from_directory, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 
 # check and initialize the project path
 try:

@@ -1,5 +1,6 @@
 import ctypes
 import numpy as np
+import time
 
 
 class Camera:
@@ -101,6 +102,7 @@ class Camera:
         self.funcs.releaseSDK()
 
     def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> np.ndarray:
+        start = time.time()
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
 
@@ -116,8 +118,11 @@ class Camera:
 
         pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
         p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
+        print(f"{time.time() - start:.2f} seconds to set parameters")
+        start = time.time()
 
         retVal = self.funcs.expose(self.cam_ptr, p_exp_region, p_bin_mode, p_settings, p_pixels)
+        print(f"{time.time() - start:.2f} seconds to expose")
         match retVal:
             case 0:
                 return pixels.reshape(exp_region[3], exp_region[2])
@@ -170,8 +175,12 @@ if __name__ == "__main__":
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
     for i in range(10):
+        start = time.time()
         img = camera.expose(22000)
+        print(f"{time.time() - start:.2f} seconds to get image")
+        start = time.time()
         plt.imsave(f"img_{i}.png", img)
+        print(f"{time.time() - start:.2f} seconds to save")
     camera.close()
 
 
