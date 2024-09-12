@@ -104,8 +104,7 @@ class Camera:
     def _release_sdk(self) -> None:
         self.funcs.releaseSDK()
 
-    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> np.ndarray:
-        start = time.time()
+    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> tuple[np.ndarray, float]:
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
 
@@ -121,14 +120,14 @@ class Camera:
 
         pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
         p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
-        print(f"{time.time() - start:.2f} seconds to set parameters")
-        start = time.time()
 
+        exposure_start = time.time()
         retVal = self.funcs.expose(self.cam_ptr, p_exp_region, p_bin_mode, p_settings, p_pixels)
-        print(f"{time.time() - start:.2f} seconds to expose")
+        actual_exposure = time.time() - exposure_start
+
         match retVal:
             case 0:
-                return pixels.reshape(exp_region[3], exp_region[2])
+                return pixels.reshape(exp_region[3], exp_region[2]), actual_exposure
             case 1:
                 raise RuntimeError("USB communication error")
             case 2:
@@ -172,18 +171,27 @@ class Camera:
                 f"Max Depth: {self.max_depth} bit")
 
     @staticmethod
-    def array_to_fits(array: np.ndarray[np.uint16], filename: str) -> None:
+    def array_to_fits(array: np.ndarray, filename: str) -> None:
         hdu = fits.PrimaryHDU(array)
         hudl = fits.HDUList([hdu])
         hudl.writeto(f"{filename}.fits", overwrite=True)
 
     @staticmethod
-    def fits_to_png(filename: str) -> None:
-        with fits.open(f"{filename}.fits") as hdul:
-            image = hdul[0].data
+    def array_to_png(array: np.ndarray, filename: str) -> None:
+        # Step 1: Read the 16-bit monochrome image array
+        original_height, original_width = array.shape
 
-        image = np.uint8((image - np.min(image)) / np.max(image) * 255)
-        cv2.imwrite(f"{filename}.png", image)
+        # Step 2: Resize the image to 1/4 of its original resolution
+        new_width = original_width // 2
+        new_height = original_height // 2
+        resized_image = cv2.resize(array, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+        # Step 3: Normalize the image data to 8-bit
+        normalized_image = cv2.normalize(resized_image, None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.uint8(normalized_image)
+
+        # Step 4: Save the resized image as a PNG file
+        cv2.imwrite(f"{filename}.png", normalized_image)
 
 
 if __name__ == "__main__":
@@ -191,14 +199,13 @@ if __name__ == "__main__":
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
     for i in range(10):
-        start = time.time()
-        img = camera.expose(22000)
-        print(f"{time.time() - start:.2f} seconds to get image")
+        img, c_exposure_time = camera.expose(22000)
+        print(f"Exposure time: {c_exposure_time:.2f} seconds")
         start = time.time()
         camera.array_to_fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
         print(f"{time.time() - start:.2f} seconds to save")
         start = time.time()
-        camera.fits_to_png(f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
+        camera.array_to_png(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
         print(f"{time.time() - start:.2f} seconds to convert")
     camera.close()
 
