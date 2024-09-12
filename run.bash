@@ -1,1 +1,1 @@
-git pull && cd c++ && make && cd ../web/python && python3 camera_driver.py && cd ../..
+git pull && cd c++ && make && cd ../web/python && python3 camera.py && cd ../..
