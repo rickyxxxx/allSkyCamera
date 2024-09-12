@@ -100,7 +100,7 @@ class Camera:
     def _release_sdk(self) -> None:
         pass
 
-    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=140, offset=10) -> np.ndarray:
+    def expose(self, exposure, exp_region=None, bin_mode=(1, 1), gain=10, offset=140) -> np.ndarray:
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
 
