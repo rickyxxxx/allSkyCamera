@@ -114,6 +114,22 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     if (QHYCCD_SUCCESS != retVal)
         return 6;       // error setting the camera's bit resolution
 
+    retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
+    if (QHYCCD_SUCCESS == retVal)
+    {
+      retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
+      if (retVal == QHYCCD_SUCCESS)
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", CHIP_GAIN);
+      }
+      else
+      {
+        printf("SetQHYCCDParam CONTROL_GAIN failure, error: %d\n", retVal);
+        getchar();
+        return 1;
+      }
+    }
+
     // check and set gain
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
     if (retVal != QHYCCD_SUCCESS)
