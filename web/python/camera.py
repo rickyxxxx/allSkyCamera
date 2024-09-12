@@ -166,7 +166,13 @@ class Camera:
 
 if __name__ == "__main__":
     import os
+    import matplotlib.pyplot as plt
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
     print(camera.info())
-    camera.expose(22000)
+    for i in range(10):
+        input("Press Enter to take a picture")
+        img = camera.expose(22000)
+        plt.imshow(img)
+        plt.show()
+
 
