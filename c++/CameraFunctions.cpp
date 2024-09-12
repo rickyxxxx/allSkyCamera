@@ -53,21 +53,12 @@ qhyccd_handle* connectCamera(char *camId){
 
 
 unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
-    // get effective area
-    unsigned int retVal = GetQHYCCDOverScanArea(pCamHandle, &scanInfo[0], &scanInfo[1], &scanInfo[2], &scanInfo[3]);
-    if (QHYCCD_SUCCESS != retVal)
-        return 1;       // error getting the camera's effective area
-
     // get chip info
-    retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[4], &scanInfo[5], &chipInfo[2],
-                               &chipInfo[3], &scanInfo[6]);
+    retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1], &chipInfo[2],
+                               &chipInfo[3], &scanInfo[2]);
     if (QHYCCD_SUCCESS != retVal)
-        return 2;       // error getting the camera's chip info
+        return 1;       // error getting the camera's chip info
 
     return 0;
 }
-//
-//void exposure(qhyccd_handle *pCamHandle) {
-////    SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, expTime);
-//}
 

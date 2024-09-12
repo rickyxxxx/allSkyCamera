@@ -60,13 +60,20 @@ class Camera:
             raise RuntimeError("Unknown error")
 
     def _get_chip_info(self) -> None:
-        scan_info = np.zeros(7, dtype=np.uint32)
+        scan_info = np.zeros(3, dtype=np.uint32)
         p_scan_info = scan_info.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         chip_info = np.zeros(4, dtype=np.float64)
         p_chip_info = chip_info.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
         retVal = self.funcs.getChipInfo(self.cam_ptr, p_scan_info, p_chip_info)
-        print(scan_info, chip_info)
+
+        if retVal:
+            raise RuntimeError("Failed to get chip info")
+
+        self.resolution = (scan_info[0], scan_info[1])
+        self.chip_size = (chip_info[0], chip_info[1])
+        self.pixel_size = (chip_info[2], chip_info[3])
+        self.max_depth = scan_info[2]
 
     def _connect_camera(self) -> any:
         cam = bytes(self.camera_id, encoding='utf-8')
@@ -92,12 +99,16 @@ class Camera:
         pass
 
     def info(self) -> str:
-        pass
+        return (f"Camera ID: {self.camera_id}\n"
+                f"SDK Version: {self.sdk_version}\n"
+                f"Chip Size: {self.chip_size} mm\n"
+                f"Resolution: {self.resolution}\n"
+                f"Pixel Size: {self.pixel_size} um\n"
+                f"Max Depth: {self.max_depth} bit")
 
 
 if __name__ == "__main__":
     import os
     camera = Camera(os.environ["ALL_SKY_CAMERA"])
-    print("sdk version: ", camera.sdk_version)
-    print("camera id: ", camera.camera_id)
+    print(camera.info())
 
