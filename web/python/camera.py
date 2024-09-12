@@ -1,6 +1,7 @@
 import time
 import ctypes
 
+import cv2
 import numpy as np
 from astropy.io import fits
 
@@ -171,10 +172,18 @@ class Camera:
                 f"Max Depth: {self.max_depth} bit")
 
     @staticmethod
-    def array2Fits(array: np.ndarray[np.uint16], filename: str) -> None:
+    def array_to_fits(array: np.ndarray[np.uint16], filename: str) -> None:
         hdu = fits.PrimaryHDU(array)
         hudl = fits.HDUList([hdu])
         hudl.writeto(f"{filename}.fits", overwrite=True)
+
+    @staticmethod
+    def fits_to_png(filename: str) -> None:
+        with fits.open(f"{filename}.fits") as hdul:
+            image = hdul[0].data
+
+        image = np.uint8((image - np.min(image)) / np.max(image) * 255)
+        cv2.imwrite(f"{filename}.png", image)
 
 
 if __name__ == "__main__":
@@ -186,8 +195,11 @@ if __name__ == "__main__":
         img = camera.expose(22000)
         print(f"{time.time() - start:.2f} seconds to get image")
         start = time.time()
-        camera.array2Fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
+        camera.array_to_fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
         print(f"{time.time() - start:.2f} seconds to save")
+        start = time.time()
+        camera.fits_to_png(f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
+        print(f"{time.time() - start:.2f} seconds to convert")
     camera.close()
 
 
