@@ -114,20 +114,15 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     if (QHYCCD_SUCCESS != retVal)
         return 6;       // error setting the camera's bit resolution
 
+    // check and set gain
     retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
-    if (QHYCCD_SUCCESS == retVal)
-    {
-      retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
-      if (retVal == QHYCCD_SUCCESS)
-      {
-        printf("SetQHYCCDParam CONTROL_GAIN set to: %d, success\n", settings[0]);
-      }
-      else
-      {
-        printf("SetQHYCCDParam CONTROL_GAIN failure, error: %d\n", retVal);
+    if (retVal != QHYCCD_SUCCESS)
+        return 7;       // error checking the camera's gain
+    printf("Gain: %d\n", settings[0]);
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, settings[0]);
+    if (QHYCCD_SUCCESS != retVal) {
         getchar();
-        return 8;
-      }
+        return 8;       // error setting the camera's gain
     }
 
     // check and set offset
@@ -135,16 +130,17 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned int *expRegion, int *bin
     if (QHYCCD_SUCCESS != retVal)
         return 9;       // error checking the camera's offset
     retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, settings[1]);
-    if (QHYCCD_SUCCESS != retVal)
+    if (QHYCCD_SUCCESS != retVal) {
         getchar();
         return 10;      // error setting the camera's offset
+    }
 
     // set exposure time
     retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, settings[2]);
-    if (QHYCCD_SUCCESS != retVal)
+    if (QHYCCD_SUCCESS != retVal){
         getchar();
         return 11;      // error setting the camera's exposure time
-
+    }
 
     // single frame
     printf("ExpQHYCCDSingleFrame(pCamHandle) - start...\n");
