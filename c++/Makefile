@@ -19,7 +19,7 @@ OBJA = $(EXEC).so
 all: libcamera.so
 
 $(OBJA): CameraFunctions.cpp
-	$(CXX) -o libcamera.so -fPIC CameraFunctions.cpp $(EXTRALIBS) $(OPENCV) -shared
+	$(CXX) -o ../shared/libcamera.so -fPIC CameraFunctions.cpp $(EXTRALIBS) $(OPENCV) -shared
 
 #all: $(EXEC)
 
