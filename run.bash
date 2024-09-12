@@ -1,1 +1,1 @@
-git pull && cd c++ && make && cd ../web/python && python3 camera.py && cd ../..
+clear && git pull && cd c++ && make && cd ../web/python && python3 camera.py && cd ../..
