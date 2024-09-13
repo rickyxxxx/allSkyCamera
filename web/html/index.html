@@ -16,20 +16,51 @@
     </div>
     <div id="content">
         <div id="gallery" class="tab-content">
-            <h1>Gallery</h1>
-            <div id="galleryContent", style="grid-auto-flow: column"></div>
+            <div id="galleryControls">
+                <h1>Gallery</h1>
+                <button onclick="downloadImages()">Download All</button>
+            </div>
+            <div id="galleryContent" style="grid-auto-flow: column"></div>
         </div>
         <div id="liveStream" class="tab-content" style="display:none;">
             <h1>Live Stream</h1>
+            <h2>Currently under development</h2>
             <!-- Live Stream content goes here -->
         </div>
         <div id="scheduler" class="tab-content" style="display:none;">
             <h1>Scheduler</h1>
-            <!-- Scheduler content goes here -->
+            <div>
+                <h2>Exposure Time (us)</h2>
+                <label for="exposureTime"></label>
+                <input type="number" id="exposureTime" placeholder="Exposure Time (us)">
+                <label for="exposureTimeUnit"></label>
+                <select id="exposureTimeUnit">
+                    <option value="us">us</option>
+                    <option value="ms">ms</option>
+                    <option value="s">s</option>
+                </select>
+            </div>
+            <div>
+                <h2>Interval Time (s)</h2>
+                <label for="intervalTime"></label>
+                <input type="number" id="intervalTime" placeholder="2" min="2">
+            </div>
+            <div>
+                <h2>Gain</h2>
+                <label for="gain"></label>
+                <input type="number" id="gain" placeholder="Gain" min="0">
+            </div>
+            <div>
+                <h2>Offset</h2>
+                <label for="offset"></label>
+                <input type="number" id="offset" placeholder="Offset" min="0">
+            </div>
+            <button onclick="startScheduler()">Start</button>
+            <button onclick="stopScheduler()" disabled="disabled">Stop</button>
         </div>
         <div id="settings" class="tab-content" style="display:none;">
             <h1>Settings</h1>
-            <!-- Settings content goes here -->
+            <h2>Currently under development</h2>
         </div>
     </div>
     <script src="/shared/javascript/index.js"></script>

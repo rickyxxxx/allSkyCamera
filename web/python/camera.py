@@ -238,23 +238,3 @@ class Camera:
 
         # Step 4: Save the resized image as a PNG file
         cv2.imwrite(f"{filename}.png", normalized_image)
-
-
-if __name__ == "__main__":
-    import os
-    camera = Camera(os.environ["ALL_SKY_CAMERA"])
-    print(camera.info())
-    for i in range(8):
-        exp_time = 2200
-        print(exp_time)
-        img, c_exposure_time = camera.expose(exp_time)
-        print(f"Exposure time: {c_exposure_time:.2f} seconds")
-        start = time.time()
-        camera.array_to_fits(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
-        print(f"{time.time() - start:.2f} seconds to save")
-        start = time.time()
-        camera.array_to_png(img, f"{os.environ['ALL_SKY_CAMERA']}shared/img/pic_{i}")
-        print(f"{time.time() - start:.2f} seconds to convert")
-    camera.close()
-
-
