@@ -122,8 +122,8 @@ def start_scheduler_thread():
             array, _ = cam.expose(exposure, gain=gain, offset=offset)
             time_stamp = get_time_stamp()
             name = f"{PROJECT_PATH}/shared/img/{time_stamp}"
-            cam.array_to_fits(array, f"{name}.fits")
-            cam.array_to_png(array, f"{name}.png")
+            cam.array_to_fits(array, name)
+            cam.array_to_png(array, name)
             image_specs[f"{name}.png"] = {
                 "timestamp": time_stamp, "exposure": exposure, "gain": gain, "offset": offset
             }
@@ -138,8 +138,9 @@ def start_scheduler_thread():
 if __name__ == '__main__':
     cam: Optional[camera.Camera] = None
     scheduler_running = False
+    with open(f"{PROJECT_PATH}/shared/img/image_info.json") as spec:
+        image_specs = json.load(spec)
     try:
-        image_specs = {}
         cam = camera.Camera(PROJECT_PATH)
         settings = {'gain': 10, 'offset': 140, 'exposure': 10000, 'interval': 2}
         app.run(host='0.0.0.0', port=8080)
