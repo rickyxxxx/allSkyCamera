@@ -19,7 +19,7 @@ function fetchImages() {
     fetch('/images')
         .then(response => response.json())
         .then(images => {
-            images.sort((a, b) => a[1].localeCompare(b[1]));
+            images.sort((a, b) => a[1].localeCompare(b[1])).reverse();
 
             const galleryContent = document.getElementById('galleryContent');
             galleryContent.style.display = 'flex';
