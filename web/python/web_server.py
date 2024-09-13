@@ -128,7 +128,15 @@ def start_scheduler_thread():
 
 
 if __name__ == '__main__':
-    image_specs = {}
-    cam = camera.Camera(PROJECT_PATH)
-    settings = {'gain': 10, 'offset': 140, 'exposure': 10000, 'interval': 2}
-    app.run(host='0.0.0.0', port=8080)
+    cam: Optional[camera.Camera] = None
+    try:
+        image_specs = {}
+        cam = camera.Camera(PROJECT_PATH)
+        settings = {'gain': 10, 'offset': 140, 'exposure': 10000, 'interval': 2}
+        app.run(host='0.0.0.0', port=8080)
+    finally:
+        if scheduler is not None:
+            terminate_scheduler.set()
+            scheduler.join()
+        cam.close()
+        print("Server closed")
