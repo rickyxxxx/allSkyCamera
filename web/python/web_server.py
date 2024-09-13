@@ -126,7 +126,7 @@ def start_scheduler_thread():
             name = f"{PROJECT_PATH}/shared/img/{time_stamp}"
             cam.array_to_fits(array, name)
             cam.array_to_png(array, name)
-            image_specs[f"{name}.png"] = {
+            image_specs[f"{time_stamp}.png"] = {
                 "timestamp": time_stamp, "exposure": exposure, "gain": gain, "offset": offset
             }
             with open(f"{PROJECT_PATH}/shared/img/image_info.json", 'w') as spec:
