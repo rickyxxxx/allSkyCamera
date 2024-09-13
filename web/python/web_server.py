@@ -92,7 +92,7 @@ def stop_scheduler():
 @app.route('/get_scheduler_status')
 def get_scheduler_status():
     global scheduler_running
-    return jsonify({'running': scheduler_running})
+    return jsonify({'running': "r" if scheduler_running else "i"})
 
 
 @app.route('/get_settings')

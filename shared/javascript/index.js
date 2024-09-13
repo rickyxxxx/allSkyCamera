@@ -20,7 +20,10 @@ function fetchImages() {
         .then(response => response.json())
         .then(images => {
             const galleryContent = document.getElementById('galleryContent');
-            galleryContent.innerHTML = '';
+            galleryContent.style.display = 'flex';
+            galleryContent.style.flexDirection = 'column';
+            galleryContent.style.alignItems = 'center'; // Optional: Center align the images
+
             images.forEach(image => {
                 const div = document.createElement('div');
                 div.className = 'image';
@@ -34,7 +37,7 @@ function fetchImages() {
                                 <span>Gain/Offset: ${image[3]}/${image[4]}</span>
                             </div>
                         </div>                 
-                </div>
+                    </div>
                 `;
                 galleryContent.appendChild(div);
             });
@@ -158,7 +161,7 @@ function getSchedulerStatus() {
     fetch('/get_scheduler_status')
         .then(response => response.json())
         .then(data => {
-            if (data.status === true) {
+            if (data.status === "r") {
                 document.querySelector('button[onclick="startScheduler()"]').disabled = true;
                 document.querySelector('button[onclick="stopScheduler()"]').disabled = false;
             } else {
