@@ -108,6 +108,9 @@ def get_time_stamp():
 
 def start_scheduler_thread():
     global scheduler, terminate_scheduler, cam, settings, image_specs, scheduler_running
+    if scheduler_running:
+        return
+    scheduler_running = True
     terminate_scheduler.clear()     # reset the terminate flag
 
     def event_loop():
@@ -134,7 +137,6 @@ def start_scheduler_thread():
 
     scheduler = Thread(target=event_loop)
     scheduler.start()
-    scheduler_running = True
 
 
 if __name__ == '__main__':
