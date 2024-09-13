@@ -112,7 +112,7 @@ def start_scheduler_thread():
                     return
                 time.sleep(1)
             print(f"Camera Exposing with exposure:{exposure}  gain:{gain}  offset:{offset}")
-            array, _ = cam.expose(exposure, gain, offset)
+            array, _ = cam.expose(exposure, gain=gain, offset=offset)
             time_stamp = get_time_stamp()
             name = f"{PROJECT_PATH}/shared/img/{time_stamp}"
             cam.array_to_fits(array, f"{name}.fits")
