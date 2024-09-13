@@ -158,7 +158,7 @@ function getSchedulerStatus() {
     fetch('/get_scheduler_status')
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'running') {
+            if (data.status === true) {
                 document.querySelector('button[onclick="startScheduler()"]').disabled = true;
                 document.querySelector('button[onclick="stopScheduler()"]').disabled = false;
             } else {

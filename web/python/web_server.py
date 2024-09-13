@@ -33,12 +33,14 @@ def index():
 
 @app.route('/images')
 def images():
-    with open(f"{PROJECT_PATH}/shared/img/image_info.json") as spec:
-        img_specs = json.load(spec)
+    global image_specs
 
     def unpack_specs(f: str) -> Iterable:
         fields = "timestamp", "exposure", "gain", "offset"
-        return [img_specs[f][field] for field in fields]
+        return [
+            image_specs.get(f, {}).get(field, "unknown")
+            for field in fields
+        ]
 
     def is_image(f: str) -> bool:
         suffixes = '.jpg', '.png', '.jpeg'
