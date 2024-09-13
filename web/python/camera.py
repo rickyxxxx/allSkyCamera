@@ -157,6 +157,7 @@ class Camera:
             -> tuple[np.ndarray, float]:
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
+        print(exp_region)
 
         if self.binMode != bin_mode:
             self._set_bin_mode(bin_mode)
