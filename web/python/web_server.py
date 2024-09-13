@@ -78,12 +78,19 @@ def start_scheduler():
 
 @app.route('/stop_scheduler')
 def stop_scheduler():
-    global scheduler, terminate_scheduler
+    global scheduler, terminate_scheduler, scheduler_running
     if scheduler is not None:
         terminate_scheduler.set()
         scheduler.join()
         scheduler = None
+    scheduler_running = False
     return jsonify({'message': 'Scheduler stopped successfully'})
+
+
+@app.route('/get_scheduler_status')
+def get_scheduler_status():
+    global scheduler_running
+    return jsonify({'running': scheduler_running})
 
 
 @app.route('/get_settings')
@@ -98,7 +105,7 @@ def get_time_stamp():
 
 
 def start_scheduler_thread():
-    global scheduler, terminate_scheduler, cam, settings, image_specs
+    global scheduler, terminate_scheduler, cam, settings, image_specs, scheduler_running
     terminate_scheduler.clear()     # reset the terminate flag
 
     def event_loop():
@@ -125,10 +132,12 @@ def start_scheduler_thread():
 
     scheduler = Thread(target=event_loop)
     scheduler.start()
+    scheduler_running = True
 
 
 if __name__ == '__main__':
     cam: Optional[camera.Camera] = None
+    scheduler_running = False
     try:
         image_specs = {}
         cam = camera.Camera(PROJECT_PATH)

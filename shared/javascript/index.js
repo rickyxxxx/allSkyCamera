@@ -3,6 +3,7 @@ function showTab(tabId) {
         fetchImages();
     } else if (tabId === 'scheduler') {
         getSettings();
+        getSchedulerStatus();
     }
     document.querySelectorAll('.tab-content').forEach(content => {
         content.style.display = 'none';
@@ -151,6 +152,20 @@ function getSettings() {
             document.getElementById('offset').placeholder = data.offset;
         });
 
+}
+
+function getSchedulerStatus() {
+    fetch('/get_scheduler_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'running') {
+                document.querySelector('button[onclick="startScheduler()"]').disabled = true;
+                document.querySelector('button[onclick="stopScheduler()"]').disabled = false;
+            } else {
+                document.querySelector('button[onclick="startScheduler()"]').disabled = false;
+                document.querySelector('button[onclick="stopScheduler()"]').disabled = true;
+            }
+        });
 }
 
 
