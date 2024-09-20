@@ -8,10 +8,11 @@ from astropy.io import fits
 
 class Camera:
 
-    def __init__(self, project_path: str) -> None:
-        self.funcs = ctypes.CDLL(f"{project_path}/shared/libcamera.so")
-
-        self._set_arg_res_types()
+    def __init__(self, project_path: str, emulate=False) -> None:
+        if not emulate:
+            self.funcs = ctypes.CDLL(f"{project_path}/shared/libcamera.so")
+            self._set_arg_res_types()
+        self.emulate = emulate
 
         self.sdk_version = self._get_sdk_version()
         self.camera_id = self._get_camera_id()
@@ -28,6 +29,8 @@ class Camera:
         self.exposureTime = None
 
     def _get_sdk_version(self) -> str:
+        if self.emulate:
+            return "Emulated"
         sdk_version = np.zeros(4, dtype=np.uint32)
         ptr = sdk_version.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         self.funcs.SDKVersion(ptr)
@@ -35,11 +38,11 @@ class Camera:
         return f"V20{sdk_version[0]}{sdk_version[1]:02}{sdk_version[2]:02}_{sdk_version[3]}"
 
     def _get_firmware_version(self) -> str:
+        if self.emulate:
+            return "Emulated"
         firmware_version = np.zeros(4, dtype=np.uint16)
         ptr = firmware_version.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         self.funcs.FirmwareVersion(self.cam_ptr, ptr)
-
-        print(firmware_version)
 
         return ""
 
@@ -57,6 +60,8 @@ class Camera:
         self.funcs.expose.restype = ctypes.c_uint
 
     def _get_camera_id(self) -> str:
+        if self.emulate:
+            return "Emulated"
         camera_id = ctypes.create_string_buffer(32)
         retVal = self.funcs.getCameraId(camera_id)
 
@@ -74,6 +79,12 @@ class Camera:
             raise RuntimeError("Unknown error")
 
     def _get_chip_info(self) -> None:
+        if self.emulate:
+            self.resolution = (1920, 1080)
+            self.chip_size = (13.2, 7.4)
+            self.pixel_size = (6.9, 6.9)
+            self.max_depth = 16
+            return
         scan_info = np.zeros(3, dtype=np.uint32)
         p_scan_info = scan_info.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         chip_info = np.zeros(4, dtype=np.float64)
@@ -90,6 +101,8 @@ class Camera:
         self.max_depth = int(scan_info[2])
 
     def _connect_camera(self) -> any:
+        if self.emulate:
+            return None
         cam = bytes(self.camera_id, encoding='utf-8')
         cam_ptr = self.funcs.connectCamera(cam)
 
@@ -155,6 +168,12 @@ class Camera:
 
     def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140, bbp=16) \
             -> tuple[np.ndarray, float]:
+        if self.emulate:
+            print(f"Emulating exposure for {exposureTime / 1000 / 1000} seconds")
+            time.sleep(exposureTime / 1000 / 1000)
+            image_data = np.random.randint(0, 65535, (1080, 1920), dtype=np.uint16)
+            return image_data, exposureTime
+
         if exp_region is None:
             exp_region = (0, 0, self.resolution[0], self.resolution[1])
         print(exp_region)

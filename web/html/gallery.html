@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <link rel="stylesheet" href="/shared/stylesheets/gallery.css">
+</head>
+<body>
+    <div id="gallery" class="tab-content">
+        <div id="galleryControls">
+
+            <button onclick="onHomeClicked()">Home</button>
+            <button onclick="downloadImages()">Download All</button>
+            <button onclick="onSelectClicked()">Select</button>
+            <button id="galleryDelete" onclick="onDeleteClicked()" disabled>Delete</button>
+            <button id="galleryDownload" onclick="onDownloadClicked()" disabled>Download</button>
+            <label>
+                <input type="checkbox" id="deleteOnDownload" checked> Delete image on download
+            </label>
+        </div>
+        <div id="galleryContent"></div>
+        <div id="pagination"></div>
+    </div>
+    <script src="/shared/javascript/gallery.js"></script>
+</body>
+</html>

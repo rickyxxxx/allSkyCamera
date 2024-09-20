@@ -2,65 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Gallery</title>
-    <link rel="stylesheet" href="/shared/css/index.css">
+    <title>Title</title>
+    <link rel="stylesheet" href="/shared/stylesheets/index.css">
 </head>
 <body>
-    <div id="navbar">
-        <h1>Navigation</h1>
-        <div class="tab active" onclick="showTab('gallery')">Gallery</div>
-        <div class="tab" onclick="showTab('liveStream')">Live Stream</div>
-        <div class="tab" onclick="showTab('scheduler')">Scheduler</div>
-        <div class="tab" onclick="showTab('settings')">Settings</div>
-    </div>
-    <div id="content">
-        <div id="gallery" class="tab-content">
-            <div id="galleryControls">
-                <h1>Gallery</h1>
-                <button onclick="downloadImages()">Download All</button>
-            </div>
-            <div id="galleryContent" style="grid-auto-flow: column"></div>
+    <div class="previewContainer">
+        <div class="previewWindow">
+            <img id="previewImage" src="/shared/img/placeholder.png" alt="">
         </div>
-        <div id="liveStream" class="tab-content" style="display:none;">
-            <h1>Live Stream</h1>
-            <h2>Currently under development</h2>
-            <!-- Live Stream content goes here -->
-        </div>
-        <div id="scheduler" class="tab-content" style="display:none;">
-            <h1>Scheduler</h1>
-            <div>
-                <h2>Exposure Time (us)</h2>
-                <label for="exposureTime"></label>
-                <input type="number" id="exposureTime" placeholder="Exposure Time (us)">
-                <label for="exposureTimeUnit"></label>
-                <select id="exposureTimeUnit">
-                    <option value="us">us</option>
-                    <option value="ms">ms</option>
-                    <option value="s">s</option>
-                </select>
+        <div class="previewToolbar">
+            <button onclick="onLiveModeClicked()">Live Mode</button>
+
+            <div class="Gallery">
+                <button onclick="onGalleryClicked()">Gallery</button>
             </div>
-            <div>
-                <h2>Interval Time (s)</h2>
-                <label for="intervalTime"></label>
-                <input type="number" id="intervalTime" placeholder="2" min="2">
+
+            <div class="ExposureParameters">
+                <div>
+                    <p>Exposure Time</p>
+                    <div class="ExposureTimeContainer">
+                        <label for="exposureTime"></label>
+                        <input id="exposureTime" placeholder="Exposure Time (us)" class="previewInput">
+                        <label for="exposureTimeUnit"></label>
+                        <select id="exposureTimeUnit">
+                            <option value="us">us</option>
+                            <option value="ms">ms</option>
+                            <option value="s">s</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <p>Gain</p>
+                    <label for="gain"></label>
+                    <input id="gain" placeholder="Gain" class="previewInput">
+                </div>
+                <div>
+                    <p>Offset</p>
+                    <label for="offset"></label>
+                    <input id="offset" placeholder="Offset" class="previewInput">
+                </div>
+                <div>
+                    <p>Interval (s)</p>
+                    <label for="intervalTime"></label>
+                    <input id="intervalTime" placeholder="interval" class="previewInput">
+                </div>
             </div>
-            <div>
-                <h2>Gain</h2>
-                <label for="gain"></label>
-                <input type="number" id="gain" placeholder="Gain" min="0">
+
+            <div class="ExposureControl">
+                <button onclick="onExposureClicked()" id="exposure">Exposure</button>
+                <label for="exposureCount"></label>
+                <input id="exposureCount" placeholder="1" class="previewInput">
+                <p>Progress:</p>
+                <p id="expProgress"></p>
             </div>
-            <div>
-                <h2>Offset</h2>
-                <label for="offset"></label>
-                <input type="number" id="offset" placeholder="Offset" min="0">
+
+            <div class="tagControl">
+                <p id="currentTag">Current Tag: None</p>
+                <button onclick="onAddTagClicked()">add tag</button>
+                <button onclick="onClearTagClicked()" id='clear tag' disabled>clear tag</button>
             </div>
-            <button onclick="startScheduler()">Start</button>
-            <button onclick="stopScheduler()" disabled="disabled">Stop</button>
-        </div>
-        <div id="settings" class="tab-content" style="display:none;">
-            <h1>Settings</h1>
-            <h2>Currently under development</h2>
+
         </div>
     </div>
     <script src="/shared/javascript/index.js"></script>

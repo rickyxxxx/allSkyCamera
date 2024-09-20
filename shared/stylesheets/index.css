@@ -1,0 +1,67 @@
+.header{
+    background-color: black;
+    margin: 0;
+    padding: 0;
+}
+
+.body{
+    background-color: black;
+    margin: 0;
+    padding: 0;
+}
+
+.previewContainer{
+    display: flex;
+    height: 100vh;
+    background-color: black;
+}
+
+.previewWindow{
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+    margin: 0;
+}
+
+.previewWindow img{
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+.previewToolbar{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-end;
+    padding: 10px;
+    background-color: #2c2c2a;
+    color: white;
+}
+
+.previewInput{
+    background-color: #373737;
+    border-radius: 5px;
+    border-color: #373737;
+    color: white;
+}
+
+.ExposureTimeContainer select{
+    background-color: #373737;
+    color: white;
+    border-color: #373737;
+    /*padding: 10px;*/
+}
+
+.ExposureTimeContainer{
+    display: flex;
+    align-items: center;
+}
+
+
+
+

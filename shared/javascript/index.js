@@ -1,68 +1,39 @@
-function showTab(tabId) {
-    if (tabId === 'gallery') {
-        fetchImages();
-    } else if (tabId === 'scheduler') {
-        getSettings();
-        getSchedulerStatus();
+function onLiveModeClicked(){
+    alert("Under Development");
+}
+
+function onExposureClicked(){
+    let count = document.getElementById('exposureCount').value;
+    if (count === ''){
+        count = document.getElementById('exposureCount').placeholder;
     }
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.style.display = 'none';
-    });
-    document.getElementById(tabId).style.display = 'block';
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+    alert(`taking ${count} exposures`);
+    startScheduler();
 }
 
-function fetchImages() {
-    fetch('/images')
-        .then(response => response.json())
-        .then(images => {
-            images.sort((a, b) => a[1].localeCompare(b[1])).reverse();
+// Example usage
+showAlert("Under Development");
 
-            const galleryContent = document.getElementById('galleryContent');
-            galleryContent.style.display = 'flex';
-            galleryContent.style.flexDirection = 'column';
-            galleryContent.style.alignItems = 'center'; // Optional: Center align the images
-
-            images.forEach(image => {
-                const div = document.createElement('div');
-                div.className = 'image';
-                div.innerHTML = `
-                    <div>
-                        <img src='/shared/img/${image[0]}' onclick="toggleFullscreen(this)">
-                        <div>
-                            <h2 style="margin: 0;">${image[1]}</h2>
-                            <div style="margin-top: auto;">
-                                <span>Exposure: ${image[2]}</span><br>
-                                <span>Gain/Offset: ${image[3]}/${image[4]}</span>
-                            </div>
-                        </div>                 
-                    </div>
-                `;
-                galleryContent.appendChild(div);
-            });
-        });
+function onGalleryClicked(){
+    window.location.href = '/gallery';
 }
 
-function toggleFullscreen(img) {
-    if (!document.fullscreenElement) {
-        img.requestFullscreen().catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-        });
-    } else {
-        document.exitFullscreen().then(r => {});
-    }
+function onAddTagClicked(){
+    alert("Settings clicked");
 }
 
-function downloadImages() {
-    window.location.href = '/download_images';
+function onClearTagClicked(){
+    alert("Clear tag clicked");
 }
 
 function isNumber(value) {
     const number = Number(value);
-    return Number.isInteger(number) && number > 0;
+    return Number.isInteger(number) && number >= 0;
+}
+
+function isPosNumber(value) {
+    const number = Number(value);
+    return number > 0;
 }
 
 function startScheduler() {
@@ -71,6 +42,7 @@ function startScheduler() {
     let intervalTime = document.getElementById('intervalTime').value;
     let gain = document.getElementById('gain').value;
     let offset = document.getElementById('offset').value;
+    let count = document.getElementById('exposureCount').value;
 
     if (exposureTime === ''){
         exposureTime = document.getElementById('exposureTime').placeholder;
@@ -84,10 +56,16 @@ function startScheduler() {
     if (offset === ''){
         offset = document.getElementById('offset').placeholder;
     }
+    if (count === ''){
+        count = document.getElementById('exposureCount').placeholder;
+    }
 
     if (!isNumber(exposureTime) || !isNumber(intervalTime) || !isNumber(gain) || !isNumber(offset)) {
         alert('Please enter valid numbers for all fields. All fields must be positive integers.');
         return;
+    }
+    if (!isPosNumber(count)){
+        alert('Please enter a valid number for exposure count. It must be a positive integer.');
     }
 
     if (exposureTimeUnit === 'ms') {
@@ -101,11 +79,6 @@ function startScheduler() {
         return;
     }
 
-    if (intervalTime < 2){
-        alert('Interval time must be at least 2 seconds.');
-        return;
-    }
-
     const data = {
         exposure: exposureTime,
         interval: intervalTime,
@@ -113,19 +86,14 @@ function startScheduler() {
         offset: offset
     };
 
-    fetch('/start_scheduler', {
+    fetch(`/start_scheduler/${count}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-        document.querySelector('button[onclick="startScheduler()"]').disabled = true;
-        document.querySelector('button[onclick="stopScheduler()"]').disabled = false;
-    });
+    .then(response => response.json());
 }
 
 function stopScheduler() {
@@ -156,7 +124,6 @@ function getSettings() {
             document.getElementById('gain').placeholder = data.gain;
             document.getElementById('offset').placeholder = data.offset;
         });
-
 }
 
 function getSchedulerStatus() {
@@ -164,21 +131,23 @@ function getSchedulerStatus() {
         .then(response => response.json())
         .then(data => {
             if (data.running === "r") {
-                document.querySelector('button[onclick="startScheduler()"]').disabled = true;
-                document.querySelector('button[onclick="stopScheduler()"]').disabled = false;
+                document.getElementById("exposure").innerText = "Cancel Exposure";
+                fetch('/get_progress')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('expProgress').innerText = data.eta;
+                    });
             } else {
-                document.querySelector('button[onclick="startScheduler()"]').disabled = false;
-                document.querySelector('button[onclick="stopScheduler()"]').disabled = true;
+                document.getElementById("exposure").innerText = "Start Exposure";
+                document.getElementById('expProgress').innerText = '';
             }
         });
 }
 
-
 function main(){
-    // set the default tab to Gallery on startup
-    showTab('gallery');
+    getSettings();
 }
 
 main();
-
+setInterval(getSchedulerStatus, 1000);
 
