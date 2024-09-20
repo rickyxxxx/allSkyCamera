@@ -8,7 +8,7 @@
 <body>
     <div class="previewContainer">
         <div class="previewWindow">
-            <img id="previewImage" src="/shared/img/placeholder.png" alt="">
+            <img id="previewImage" src="/shared/assets/placeholder.jpg" alt="">
         </div>
         <div class="previewToolbar">
             <button onclick="onLiveModeClicked()">Live Mode</button>
@@ -49,7 +49,7 @@
             </div>
 
             <div class="ExposureControl">
-                <button onclick="onExposureClicked()" id="exposure">Exposure</button>
+                <button onclick="onExposureClicked()" id="exposure">Start Exposure</button>
                 <label for="exposureCount"></label>
                 <input id="exposureCount" placeholder="1" class="previewInput">
                 <p>Progress:</p>
@@ -58,8 +58,9 @@
 
             <div class="tagControl">
                 <p id="currentTag">Current Tag: None</p>
+                <label for="tagName"></label><input id="tagName">
                 <button onclick="onAddTagClicked()">add tag</button>
-                <button onclick="onClearTagClicked()" id='clear tag' disabled>clear tag</button>
+                <button onclick="onClearTagClicked()" id='clearTag' disabled>clear tag</button>
             </div>
 
         </div>

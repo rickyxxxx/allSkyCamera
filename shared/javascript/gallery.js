@@ -47,6 +47,14 @@ function displayImages() {
     }
 }
 
+
+function clearPagination() {
+    const pagination = document.getElementById('pagination');
+    while (pagination.firstChild) {
+        pagination.removeChild(pagination.firstChild);
+    }
+}
+
 function setupPagination() {
 
     const pagination = document.getElementById('pagination');
@@ -56,22 +64,32 @@ function setupPagination() {
         .then(response => response.json())
         .then(data => {
             let totalPages = data.totalPages;
-            let i = 1;
-            if (totalPages > 10){
-                i = totalPages - 5;
-                totalPages = i + 10;
+
+            let page_start = currentPage;
+            let page_end = totalPages;
+
+            if (totalPages > 10) {
+                page_start = Math.max(page_start - 5, 1);
+                page_end = Math.min(page_start + 5, totalPages);
+                page_start = Math.max(page_end - 10, 1);
             }
 
-            for (let i = 1; i <= totalPages; i++) {
+            for (let i = page_start + 1; i <= page_end; i++) {
                 const button = document.createElement('button');
                 button.innerText = i;
-                button.disabled = i === currentPage;
+                button.disabled = i === currentPage + 1;
                 button.onclick = () => {
-                    currentPage = i - 1;
+                    currentPage = i;
                     fetchAndDisplayImages();
+                    clearPagination();
+                    setupPagination();
                 };
                 pagination.appendChild(button);
             }
+
+            const index = document.createElement("p")
+            index.innerText = `Page ${currentPage + 1} of ${totalPages}`;
+            pagination.appendChild(index);
 
             const prev = document.createElement('button');
             prev.innerText = 'Prev';
@@ -79,6 +97,8 @@ function setupPagination() {
                 if (currentPage > 0) {
                     currentPage--;
                     fetchAndDisplayImages();
+                    clearPagination();
+                    setupPagination();
                 }
             }
             const next = document.createElement('button');
@@ -87,26 +107,32 @@ function setupPagination() {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
                     fetchAndDisplayImages();
+                    clearPagination();
+                    setupPagination();
                 }
             }
             const goto = document.createElement('button');
             goto.innerText = 'Go to';
             goto.onclick = () => {
-                const gi = document.createElement('input');
-
-                gi.min = 1;
-                gi.max = totalPages;
-                currentPage = gi.value - 1;
-                alert(currentPage);
+                gi = document.getElementById('gi');
+                isNumber(gi.value) && gi.value > 0 && gi.value <= totalPages ? currentPage = gi.value - 1 : alert("Invalid page number");
                 fetchAndDisplayImages();
+                clearPagination();
+                setupPagination();
             }
             const goto_input = document.createElement('input');
+            goto_input.id = 'gi';
             pagination.appendChild(prev);
             pagination.appendChild(next);
             pagination.appendChild(goto);
             pagination.appendChild(goto_input);
 
         })
+}
+
+function isNumber(value) {
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 0;
 }
 
 function toggleFullscreen(img) {
@@ -120,29 +146,118 @@ function toggleFullscreen(img) {
 }
 
 function downloadImages() {
-    window.location.href = '/download_images';
+    let fitsbox = document.getElementById("fits");
+    let pngbox = document.getElementById("png");
+
+    if (!fitsbox.checked && !pngbox.checked) {
+        alert("Please select at least one file type to download.");
+        return;
+    }else if (fitsbox.checked && pngbox.checked){
+        window.location.href = '/download_all_images/fits;png';
+    }else if (fitsbox.checked){
+        window.location.href = '/download_all_images/fits';
+    }else{
+        window.location.href = '/download_all_images/png';
+    }
+
+    const box = document.getElementById("deleteOnDownload");
+    if (box.checked) {
+        deletePresent();
+    }
+}
+
+function deletePresent(){
+    const userConfirmed = confirm("Are you sure you want to delete all images after downloading?");
+    if (!userConfirmed)
+        return;
+    let fitsbox = document.getElementById("fits");
+    let pngbox = document.getElementById("png");
+
+    let type = "";
+
+    if (!fitsbox.checked && !pngbox.checked) {
+        alert("Please select at least one file type to download.");
+        return;
+    }else if (fitsbox.checked && pngbox.checked){
+        type = 'fits;png';
+    }else if (fitsbox.checked){
+        type = 'fits';
+    }else{
+        type = 'png';
+    }
+
+    fetch(`/delete_all_images/${type}`)
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function update_tags() {
+    fetch('/get_tags')
+        .then(response => response.json())
+        .then(data => {
+            const dropdown = document.getElementById('tags'); // Replace 'dropdownId' with the actual ID of your dropdown
+            removeAllChildren(dropdown);
+            const all = document.createElement('option');
+            all.text = 'All';
+            dropdown.add(all);
+            data.tags.forEach(tag => {
+                const option = document.createElement('option');
+                option.text = tag;
+                dropdown.add(option);
+            });
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function removeAllChildren(element) {
+    while (element.firstChild) {
+        element.removeChild(element.firstChild);
+    }
 }
 
 function onHomeClicked(){
     window.location.href = '/';
 }
 
-function onSelectClicked(){
-    alert("Select clicked");
+function onFilterClicked(){
+    currentPage = 0;
+    let conditions = document.getElementById('keywords').value;
+    if (conditions === '')
+        conditions = 'All';
+    fetch(`/apply_filter/${document.getElementById('tags').value}/${conditions}`)
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => console.error('Error fetching images:', error));
+    fetchAndDisplayImages();
 }
 
-function onDeleteClicked(){
-    alert("Detect clicked");
+function onClearFilterClicked(){
+    currentPage = 0;
+    fetch('/clear_filter')
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => console.error('Error fetching images:', error));
+    fetchAndDisplayImages();
+    document.getElementById('tags').value = 'All';
+    document.getElementById('keywords').value = '';
 }
 
-function onDownloadClicked(){
-    alert("Download clicked");
-}
 
+function onRefreshClicked(){
+    fetchAndDisplayImages();
+}
 
 function main(){
     fetchAndDisplayImages();
     setupPagination();
+    update_tags();
 }
 
 main();

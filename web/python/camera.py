@@ -169,7 +169,6 @@ class Camera:
     def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140, bbp=16) \
             -> tuple[np.ndarray, float]:
         if self.emulate:
-            print(f"Emulating exposure for {exposureTime / 1000 / 1000} seconds")
             time.sleep(exposureTime / 1000 / 1000)
             image_data = np.random.randint(0, 65535, (1080, 1920), dtype=np.uint16)
             return image_data, exposureTime
@@ -237,8 +236,17 @@ class Camera:
                 f"Max Depth: {self.max_depth} bit")
 
     @staticmethod
-    def array_to_fits(array: np.ndarray, filename: str) -> None:
+    def array_to_fits(array: np.ndarray, filename: str, info: dict) -> None:
         hdu = fits.PrimaryHDU(array)
+        hdu.header["INSTRUME"] = "QHY5III678M"
+        hdu.header["CAMID"] = "71e8254fbdd757e37"
+        hdu.header["FRAMETYP"] = 'Light'
+        hdu.header["IMAGETYP"] = 'Light'
+        hdu.header["EXPTIME"] = info["exposure"]
+        hdu.header["EGAIN"] = info["gain"]
+        hdu.header["OFFSET"] = info["offset"]
+        hdu.header["DATE-OBS"] = info["timestamp"]
+
         hudl = fits.HDUList([hdu])
         hudl.writeto(f"{filename}.fits", overwrite=True)
 

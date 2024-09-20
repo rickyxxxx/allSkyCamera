@@ -1,29 +1,63 @@
+let current_image = "";
+let exposing = false;
+let tag = "";
+
 function onLiveModeClicked(){
     alert("Under Development");
 }
 
 function onExposureClicked(){
+    exposing = true;
     let count = document.getElementById('exposureCount').value;
     if (count === ''){
         count = document.getElementById('exposureCount').placeholder;
     }
-    alert(`taking ${count} exposures`);
-    startScheduler();
+    if (document.getElementById('exposure').innerText === 'Start Exposure') {
+        alert(`taking ${count} exposures`);
+        startScheduler();
+    } else {
+        alert('Stopping exposure');
+        stopScheduler();
+    }
 }
-
-// Example usage
-showAlert("Under Development");
 
 function onGalleryClicked(){
     window.location.href = '/gallery';
 }
 
 function onAddTagClicked(){
-    alert("Settings clicked");
+    tagNameField = document.getElementById('tagName');
+    tagName = tagNameField.value;
+    if (tagName === ''){
+        alert('Please enter a tag name');
+        return;
+    }
+    tag = document.getElementById('tagName').value;
+    const tagNameDisplay = document.getElementById('currentTag');
+    tagNameDisplay.innerText = `Current Tag: ${tagName}`;
+    document.getElementById('clearTag').disabled = false;
+
+    fetch(`/add_tag/${tagName}`)
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
 }
 
 function onClearTagClicked(){
-    alert("Clear tag clicked");
+    fetch('/stop_tagging')
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            tag = "";
+            const tagNameDisplay = document.getElementById('currentTag');
+            tagNameDisplay.innerText = `Current Tag: None`;
+            document.getElementById('clearTag').disabled = true;
+        });
 }
 
 function isNumber(value) {
@@ -101,8 +135,6 @@ function stopScheduler() {
         .then(response => response.json())
         .then(data => {
             alert(data.message);
-            document.querySelector('button[onclick="startScheduler()"]').disabled = false;
-            document.querySelector('button[onclick="stopScheduler()"]').disabled = true;
         });
 }
 
@@ -127,6 +159,9 @@ function getSettings() {
 }
 
 function getSchedulerStatus() {
+    if (!exposing) {
+        return;
+    }
     fetch('/get_scheduler_status')
         .then(response => response.json())
         .then(data => {
@@ -140,14 +175,40 @@ function getSchedulerStatus() {
             } else {
                 document.getElementById("exposure").innerText = "Start Exposure";
                 document.getElementById('expProgress').innerText = '';
+                exposing = false;
             }
         });
 }
 
+function getPreviewImage() {
+    fetch('/get_preview_images')
+        .then(response => response.json())
+        .then(data => {
+            if(data.img_name === "NONE") {
+                document.getElementById('previewImage').src = '/shared/assets/placeholder.jpg';
+
+                return;
+            }
+            if (current_image === data.img_name) {
+                return;
+            }
+            document.getElementById('previewImage').src = `/shared/img/${data.img_name}`;
+            current_image = data.img_name;
+        });
+}
+
+function repeatGetPreviewImage() {
+    if (exposing)
+        getPreviewImage();
+}
+
 function main(){
     getSettings();
+    getPreviewImage();
+
 }
 
 main();
 setInterval(getSchedulerStatus, 1000);
+setInterval(repeatGetPreviewImage, 1000);
 
