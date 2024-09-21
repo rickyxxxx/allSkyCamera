@@ -12,6 +12,8 @@ from threading import Thread, Event
 
 from astropy.io import fits
 from flask import Flask, render_template, send_file, jsonify, request, Response
+from zipstream import ZipStream
+import zipstream
 
 
 # check and initialize the project path
@@ -133,22 +135,136 @@ def images(page: int):
     return jsonify(img_w_specs[page_start: page_end])
 
 
-@app.route('/download_image/<string:ext>/<int:page>')
-def download_images(ext: str, page: int):
-    memory_file = io.BytesIO()
-    ext = ext.split(";")
-    pagesize = 50
-    with zipfile.ZipFile(memory_file, 'w') as zf:
-        page_start = page * pagesize
-        page_end = page_start + pagesize
-        package = internal_states['displaying_list'][page_start: page_end]
-        for img_timestamp in package:
-            for e in ext:
-                it = f"{img_timestamp}.{e}"
-                zf.write(os.path.join(f"{PROJECT_PATH}/shared/img", it), it)
+# @app.route('/download')
+# def download_files():
+#     filenames = internal_states['displaying_list']
+#     existing_files = set(scan_images())  # make sure the files are still there
+#     filenames = [f for f in filenames if f in existing_files]
+#     filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
+#
+#     # Debug: Print filenames to ensure they are correct
+#     print("Filenames to be downloaded:", filenames)
+#
+#     def generate():
+#         for filename in filenames:
+#             file_path = os.path.join(PROJECT_PATH, "shared", "img", filename)
+#             # Debug: Check if the file exists
+#             if not os.path.exists(file_path):
+#                 print(f"File not found: {file_path}")
+#                 continue
+#             with open(file_path, 'rb') as f:
+#                 while chunk := f.read(8192):
+#                     yield chunk
+#
+#     return Response(generate(), content_type='application/octet-stream')
 
-    memory_file.seek(0)
-    return send_file(memory_file, as_attachment=True, download_name=f'images_{page}.zip')
+@app.route('/download')
+def download_files():
+    filenames = internal_states['displaying_list']
+    existing_files = set(scan_images())  # make sure the files are still there
+    filenames = [f for f in filenames if f in existing_files]
+    filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
+
+    # Debug: Print filenames to ensure they are correct
+    print("Filenames to be downloaded:", filenames)
+
+    def generate():
+        for filename in filenames:
+            file_path = os.path.join(PROJECT_PATH, "shared", "img", filename)
+            # Debug: Check if the file exists
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                continue
+            with open(file_path, 'rb') as f:
+                file_data = f.read()
+                name_bytes = filename.encode('utf-8')
+                yield len(name_bytes).to_bytes(1, 'little')
+                yield name_bytes
+                yield len(file_data).to_bytes(4, 'little')
+                yield file_data
+
+    return Response(generate(), content_type='application/octet-stream')
+
+# @app.route('/download')
+# def download():
+#     # List of file paths to include in the zip
+#     filenames = internal_states['displaying_list']
+#     existing_files = set(scan_images())  # make sure the files are still there
+#     filenames = [f for f in filenames if f in existing_files]
+#     filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
+#
+#     # Create a BytesIO object to hold the zip data
+#     zip_buffer = io.BytesIO()
+#
+#     # Create a ZipFile object
+#     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zs:
+#         # Add files to the zip
+#         for file in filenames:
+#             file_path = os.path.join(PROJECT_PATH, "shared", "img", file)
+#             # Debug: Print file path and check if the file exists
+#             print(f"Adding file to zip: {file_path}")
+#             if not os.path.exists(file_path):
+#                 print(f"File not found: {file_path}")
+#                 continue
+#             with open(file_path, 'rb') as f:
+#                 file_content = f.read()
+#                 # Debug: Print file content length
+#                 print(f"File content length: {len(file_content)}")
+#                 zs.writestr(os.path.basename(file_path), file_content)
+#
+#     # Stream the zip file
+#     zip_buffer.seek(0)
+#     response = Response(zip_buffer, mimetype='application/zip')
+#     response.headers['Content-Disposition'] = 'attachment; filename=images.zip'
+#     return response
+
+# @app.route('/download')
+# def download():
+#     # List of file paths to include in the zip
+#     filenames = internal_states['displaying_list']
+#     existing_files = set(scan_images())  # make sure the files are still there
+#     filenames = [f for f in filenames if f in existing_files]
+#     filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
+#
+#     # Create a ZipStream object
+#     zs = ZipStream()
+#
+#     # Add files to the zip stream
+#     for file in filenames:
+#         file_path = os.path.join(PROJECT_PATH, "shared", "img", file)
+#         # Debug: Print file path and check if the file exists
+#         print(f"Adding file to zip: {file_path}")
+#         if not os.path.exists(file_path):
+#             print(f"File not found: {file_path}")
+#             continue
+#         with open(file_path, 'rb') as f:
+#             file_content = f.read()
+#             # Debug: Print file content length
+#             print(f"File content length: {len(file_content)}")
+#             zs.add(file_path, os.path.basename(file_path))
+#
+#     # Stream the zip file
+#     response = Response(zs, mimetype='application/zip')
+#     response.headers['Content-Disposition'] = 'attachment; filename=images.zip'
+#     return response
+
+
+# @app.route('/download_image/<string:ext>/<int:page>')
+# def download_images(ext: str, page: int):
+#     memory_file = io.BytesIO()
+#     ext = ext.split(";")
+#     pagesize = 50
+#     with zipfile.ZipFile(memory_file, 'w') as zf:
+#         page_start = page * pagesize
+#         page_end = page_start + pagesize
+#         package = internal_states['displaying_list'][page_start: page_end]
+#         for img_timestamp in package:
+#             for e in ext:
+#                 it = f"{img_timestamp}.{e}"
+#                 zf.write(os.path.join(f"{PROJECT_PATH}/shared/img", it), it)
+#
+#     memory_file.seek(0)
+#     return send_file(memory_file, as_attachment=True, download_name=f'images_{page}.zip')
 
 
 @app.route('/estimate_pagesize')
@@ -565,7 +681,7 @@ def load_specs():
 
 
 if __name__ == '__main__':
-    EMULATE = False
+    EMULATE = True
     tags, image_specs = {}, {}
     internal_states = {
         'settings': {'gain': 150, 'offset': 0, 'exposure': 100000, 'interval': 0},

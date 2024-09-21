@@ -11,15 +11,43 @@ function fetchAndDisplayImages() {
         .catch(error => console.error('Error fetching images:', error));
 }
 
-function fillFilterInfo(){
-    fetch('/get_tag_info')
-        .then(response => response.json())
-        .then(data => {
-            alert(data.info);
-            document.getElementById('tags').value = data.info[0];
-            document.getElementById('keywords').value = data.info[1];
-        })
+function onDownloadClicked() {
+    window.location.href = '/download';
 }
+// function onDownloadClicked() {
+//     fetch('/download', {
+//         method: 'GET'
+//     })
+//     .then(response => response.arrayBuffer())
+//     .then(buffer => {
+//         alert("Download will start shortly");
+//         const byteArray = new Uint8Array(buffer);
+//         // Assuming the server sends a custom format where each file is prefixed with its length and name
+//         let offset = 0;
+//         while (offset < byteArray.length) {
+//             const nameLength = byteArray[offset];
+//             offset += 1;
+//             const name = new TextDecoder().decode(byteArray.slice(offset, offset + nameLength));
+//             offset += nameLength;
+//             const fileLength = new DataView(byteArray.buffer, offset, 4).getUint32(0, true);
+//             offset += 4;
+//             const fileData = byteArray.slice(offset, offset + fileLength);
+//             offset += fileLength;
+//
+//             const blob = new Blob([fileData]);
+//             const url = window.URL.createObjectURL(blob);
+//             const a = document.createElement('a');
+//             a.style.display = 'none';
+//             a.href = url;
+//             a.download = name;
+//             document.body.appendChild(a);
+//             a.click();
+//             window.URL.revokeObjectURL(url);
+//             document.body.removeChild(a);
+//         }
+//     })
+//     .catch(error => console.error('Error downloading files:', error));
+// }
 
 function displayImages() {
     const galleryContent = document.getElementById('galleryContent');
