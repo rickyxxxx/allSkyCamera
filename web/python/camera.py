@@ -246,6 +246,7 @@ class Camera:
         hdu.header["EGAIN"] = info["gain"]
         hdu.header["OFFSET"] = info["offset"]
         hdu.header["DATE-OBS"] = info["timestamp"]
+        hdu.header["TAG"] = info["tag"]
 
         hudl = fits.HDUList([hdu])
         hudl.writeto(f"{filename}.fits", overwrite=True)

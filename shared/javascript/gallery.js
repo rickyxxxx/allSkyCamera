@@ -11,6 +11,16 @@ function fetchAndDisplayImages() {
         .catch(error => console.error('Error fetching images:', error));
 }
 
+function fillFilterInfo(){
+    fetch('/get_tag_info')
+        .then(response => response.json())
+        .then(data => {
+            alert(data.info);
+            document.getElementById('tags').value = data.info[0];
+            document.getElementById('keywords').value = data.info[1];
+        })
+}
+
 function displayImages() {
     const galleryContent = document.getElementById('galleryContent');
     galleryContent.innerHTML = ''; // Clear previous images
@@ -23,19 +33,27 @@ function displayImages() {
         const row = document.createElement('div');
         row.className = 'row';
 
-        for (let j = 0; j < 3; j++) {
-            let index = i * 3 + j;
+        for (let j = 0; j < 2; j++) {
+            let index = i * 2 + j;
             if (index >= images.length)
                 continue;
             const imageDiv = document.createElement('div');
+            let exp_str = '';
+            if (images[index][2] < 1000){
+                exp_str = images[index][2] + ' us';
+            } else if (images[index][2] < 1000000){
+                exp_str = (images[index][2] / 1000) + ' ms';
+            } else {
+                exp_str = (images[index][2] / 1000000) + ' s';
+            }
             imageDiv.className = 'image';
             imageDiv.innerHTML = `
                 <div>
-                    <img src='/shared/img/${images[index][0]}' onclick="toggleFullscreen(this)" alt="">
+                    <img src='/shared/img/${images[index][0]}.png' onclick="toggleFullscreen(this)" alt="">
                     <div>
                         <h2 style="margin: 0;">${images[index][1]}</h2>
                         <div style="margin-top: auto;">
-                            <p>Exposure: ${images[index][2]}</p>
+                            <p>Exposure: ${exp_str}</p>
                             <p>Gain/Offset: ${images[index][3]}/${images[index][4]}</p>
                         </div>
                     </div>
@@ -55,8 +73,44 @@ function clearPagination() {
     }
 }
 
-function setupPagination() {
 
+function calcPagingLabel(totalPages) {
+    let page_index = [1, 2];
+    if (totalPages <= 1)
+        return [1];
+    if (totalPages <= 5){
+        for (let i = 3; i <= totalPages; i++)
+            page_index.push(i);
+        return page_index;
+    }
+
+    // if the code reaches here, totalPages > 5
+    let start_page = Math.max(currentPage - 1, 1);
+    let end_page = Math.min(currentPage + 3, totalPages);
+    if (start_page > 3)
+        page_index.push(-1);
+    start_page = Math.max(start_page, 3);
+    for (let i = start_page; i <= end_page; i++){
+        page_index.push(i);
+    }
+    if (end_page < totalPages - 2) {
+        page_index.push(-1);
+        for (let i = totalPages - 1; i <= totalPages; i++)
+            page_index.push(i);
+    } else {
+        for (let i = end_page + 1; i <= totalPages; i++)
+            page_index.push(i);
+    }
+    return page_index;
+}
+
+function updatePage(){
+    fetchAndDisplayImages();
+    clearPagination();
+    setupPagination();
+}
+
+function setupPagination() {
     const pagination = document.getElementById('pagination');
     pagination.innerHTML = '';
 
@@ -65,67 +119,65 @@ function setupPagination() {
         .then(data => {
             let totalPages = data.totalPages;
 
-            let page_start = currentPage;
-            let page_end = totalPages;
-
-            if (totalPages > 10) {
-                page_start = Math.max(page_start - 5, 1);
-                page_end = Math.min(page_start + 5, totalPages);
-                page_start = Math.max(page_end - 10, 1);
-            }
-
-            for (let i = page_start + 1; i <= page_end; i++) {
-                const button = document.createElement('button');
-                button.innerText = i;
-                button.disabled = i === currentPage + 1;
-                button.onclick = () => {
-                    currentPage = i;
-                    fetchAndDisplayImages();
-                    clearPagination();
-                    setupPagination();
-                };
-                pagination.appendChild(button);
-            }
-
-            const index = document.createElement("p")
-            index.innerText = `Page ${currentPage + 1} of ${totalPages}`;
-            pagination.appendChild(index);
-
             const prev = document.createElement('button');
-            prev.innerText = 'Prev';
+            prev.innerText = '<';
+            prev.className = 'labelButton';
+            prev.disabled = currentPage === 0;
             prev.onclick = () => {
                 if (currentPage > 0) {
                     currentPage--;
-                    fetchAndDisplayImages();
-                    clearPagination();
-                    setupPagination();
+                    updatePage();
                 }
             }
+            pagination.appendChild(prev);
+
+            calcPagingLabel(totalPages).forEach(page => {
+                const button = document.createElement('button');
+                if (page === -1){
+                    button.innerText = '...';
+                    button.disabled = true;
+                    button.className='labelButton';
+                } else {
+                    button.innerText = page;
+                    button.className = 'pageButton';
+                    button.disabled = page === currentPage + 1;
+                    button.onclick = () => {
+                        currentPage = page - 1;
+                        updatePage()
+                    }
+                }
+                pagination.appendChild(button);
+            });
+
             const next = document.createElement('button');
-            next.innerText = 'Next';
+            next.innerText = '>';
+            next.className = 'labelButton';
+            next.disabled = currentPage === totalPages - 1;
             next.onclick = () => {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
-                    fetchAndDisplayImages();
-                    clearPagination();
-                    setupPagination();
+                    updatePage();
                 }
             }
+            pagination.appendChild(next);
+
+            const index = document.createElement("p")
+            index.innerText = `Page ${currentPage + 1} of ${Math.max(totalPages, 1)}`;
+            pagination.appendChild(index);
+
+
+            const goto_input = document.createElement('input');
+            goto_input.id = 'gi';
             const goto = document.createElement('button');
             goto.innerText = 'Go to';
             goto.onclick = () => {
                 gi = document.getElementById('gi');
                 isNumber(gi.value) && gi.value > 0 && gi.value <= totalPages ? currentPage = gi.value - 1 : alert("Invalid page number");
-                fetchAndDisplayImages();
-                clearPagination();
-                setupPagination();
+                updatePage();
             }
-            const goto_input = document.createElement('input');
-            goto_input.id = 'gi';
-            pagination.appendChild(prev);
-            pagination.appendChild(next);
-            pagination.appendChild(goto);
+
             pagination.appendChild(goto_input);
+            pagination.appendChild(goto);
 
         })
 }
@@ -145,51 +197,102 @@ function toggleFullscreen(img) {
     }
 }
 
+// async function downloadFile(url, filename) {
+//     try {
+//         const response = await fetch(url);
+//         const blob = await response.blob();
+//         const objectUrl = window.URL.createObjectURL(blob);
+//         const a = document.createElement('a');
+//         a.style.display = 'none';
+//         a.href = objectUrl;
+//         a.download = filename;
+//         document.body.appendChild(a);
+//         a.click();
+//         window.URL.revokeObjectURL(objectUrl);
+//         document.body.removeChild(a);
+//     } catch (error) {
+//         console.error('Error downloading file:', error);
+//     }
+// }
+//
+// async function downloadImages() {
+//     let fitsbox = document.getElementById("fits");
+//     let pngbox = document.getElementById("png");
+//     let exts = [];
+//
+//     if (!fitsbox.checked && !pngbox.checked) {
+//         alert("Please select at least one file type to download.");
+//         return;
+//     }
+//     if (fitsbox.checked) exts.push('fits');
+//     if (pngbox.checked) exts.push('png');
+//
+//     alert("Download will start shortly");
+//
+//     try {
+//         const response = await fetch("/estimate_pagesize");
+//         const data = await response.json();
+//         const downloadPromises = [];
+//
+//         for (let i = 0; i < data.totalPages; i++) {
+//             for (const ext of exts) {
+//                 const url = `/download_image/${ext}/${i}`;
+//                 const filename = `image_${i}.${ext}`;
+//                 downloadPromises.push(downloadFile(url, filename));
+//             }
+//         }
+//
+//         await Promise.all(downloadPromises);
+//         alert("All downloads completed");
+//     } catch (error) {
+//         console.error('Error estimating page size:', error);
+//     }
+// }
+
 function downloadImages() {
-    let fitsbox = document.getElementById("fits");
-    let pngbox = document.getElementById("png");
-
-    if (!fitsbox.checked && !pngbox.checked) {
-        alert("Please select at least one file type to download.");
-        return;
-    }else if (fitsbox.checked && pngbox.checked){
-        window.location.href = '/download_all_images/fits;png';
-    }else if (fitsbox.checked){
-        window.location.href = '/download_all_images/fits';
-    }else{
-        window.location.href = '/download_all_images/png';
-    }
-
-    const box = document.getElementById("deleteOnDownload");
-    if (box.checked) {
-        deletePresent();
-    }
+    alert("download will start shortly")
+    fetch("/estimate_pagesize")
+        .then(response => response.json())
+        .then(data => {
+            for (let i = 0; i < data.totalPages; i++) {
+                fetch(`/download_image/${ext}/${i}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `image_${i}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => console.error('Error downloading file:', error));
+            }
+        });
 }
 
 function deletePresent(){
-    const userConfirmed = confirm("Are you sure you want to delete all images after downloading?");
+    const userConfirmed = confirm("Are you sure you want to delete all the selected images?");
     if (!userConfirmed)
         return;
-    let fitsbox = document.getElementById("fits");
-    let pngbox = document.getElementById("png");
-
-    let type = "";
-
-    if (!fitsbox.checked && !pngbox.checked) {
-        alert("Please select at least one file type to download.");
-        return;
-    }else if (fitsbox.checked && pngbox.checked){
-        type = 'fits;png';
-    }else if (fitsbox.checked){
-        type = 'fits';
-    }else{
-        type = 'png';
+    if (document.getElementById('tags').value === 'All') {
+        if (document.getElementById('keywords').value === '') {
+            const userConfirmed = confirm("!!! You did not apply any filter !!! \n" +
+                "Are you sure you want to delete all images?");
+            if (!userConfirmed)
+                return;
+        }
     }
 
-    fetch(`/delete_all_images/${type}`)
+    fetch(`/delete_all_images`)
         .then(response => response.json())
         .then(data => {
             alert(data.message);
+            document.getElementById('tags').value = 'All';
+            document.getElementById('keywords').value = '';
+            updatePage();
         })
         .catch(error => console.error('Error:', error));
 }
@@ -231,27 +334,23 @@ function onFilterClicked(){
         .then(response => response.json())
         .then(data => {
             alert(data.message);
+            updatePage();
         })
         .catch(error => console.error('Error fetching images:', error));
-    fetchAndDisplayImages();
 }
 
 function onClearFilterClicked(){
     currentPage = 0;
-    fetch('/clear_filter')
+    fetch('/apply_filter/all/all')
         .then(response => response.json())
         .then(data => {
             alert(data.message);
+            updatePage();
+            document.getElementById('tags').value = 'All';
+            document.getElementById('keywords').value = '';
         })
         .catch(error => console.error('Error fetching images:', error));
-    fetchAndDisplayImages();
-    document.getElementById('tags').value = 'All';
-    document.getElementById('keywords').value = '';
-}
 
-
-function onRefreshClicked(){
-    fetchAndDisplayImages();
 }
 
 function main(){

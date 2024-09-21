@@ -1,0 +1,43 @@
+#galleryContent {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+}
+.image-container {
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+}
+.image-container img {
+    margin-right: 10px;
+}
+.image-container div {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+#content {
+    flex-grow: 1;
+    padding: 10px;
+}
+
+.image {
+    margin: 10px;
+    text-align: center;
+}
+.image img {
+    max-width: 200px;
+    max-height: 200px;
+    display: block;
+    margin: 0 auto;
+}
+
+
+#galleryContent {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, auto);
+    gap: 10px;
+}

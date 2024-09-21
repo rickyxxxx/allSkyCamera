@@ -11,8 +11,6 @@
             <img id="previewImage" src="/shared/assets/placeholder.jpg" alt="">
         </div>
         <div class="previewToolbar">
-            <button onclick="onLiveModeClicked()">Live Mode</button>
-
             <div class="Gallery">
                 <button onclick="onGalleryClicked()">Gallery</button>
             </div>
@@ -61,6 +59,11 @@
                 <label for="tagName"></label><input id="tagName">
                 <button onclick="onAddTagClicked()">add tag</button>
                 <button onclick="onClearTagClicked()" id='clearTag' disabled>clear tag</button>
+            </div>
+
+            <div>
+                <p id="diskInfo">Disk: </p>
+                <p id="memoryInfo">Memory: </p>
             </div>
 
         </div>

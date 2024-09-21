@@ -21,6 +21,22 @@ function onExposureClicked(){
     }
 }
 
+function restoreCurrentTag(){
+    fetch('/get_current_tag')
+        .then(response => response.json())
+        .then(data => {
+            tag = data.tag;
+
+            const tagNameDisplay = document.getElementById('currentTag');
+            tagNameDisplay.innerText = `Current Tag: ${tag}`;
+            document.getElementById('clearTag').disabled = tag === 'none';
+            if (tag !== 'none')
+                document.getElementById('tagName').value = tag;
+            else
+                document.getElementById('tagName').value = '';
+        });
+}
+
 function onGalleryClicked(){
     window.location.href = '/gallery';
 }
@@ -158,10 +174,16 @@ function getSettings() {
         });
 }
 
+function updateDiskMemory() {
+    fetch('/resources')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("diskInfo").innerText = data.disk;
+            document.getElementById('memoryInfo').innerText = data.memory;
+        });
+}
+
 function getSchedulerStatus() {
-    if (!exposing) {
-        return;
-    }
     fetch('/get_scheduler_status')
         .then(response => response.json())
         .then(data => {
@@ -205,10 +227,10 @@ function repeatGetPreviewImage() {
 function main(){
     getSettings();
     getPreviewImage();
-
+    restoreCurrentTag();
 }
 
 main();
 setInterval(getSchedulerStatus, 1000);
 setInterval(repeatGetPreviewImage, 1000);
-
+setInterval(updateDiskMemory, 1000);

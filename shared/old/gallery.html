@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <link rel="stylesheet" href="/shared/old/gallery.css">
+</head>
+<body>
+    <div id="gallery" class="tab-content">
+        <div id="galleryControls">
+
+            <button onclick="onHomeClicked()">Home</button>
+            <button onclick="deletePresent()">Delete Present</button>
+            <button onclick="downloadImages()">Download Present</button>
+            <label>
+                <input type="checkbox" id="deleteOnDownload" checked> Delete image on download
+            </label>
+            <button onclick="onFilterClicked()">Filter</button>
+            <label>tags<select id="tags"></select></label>
+            <label>keywords<input id="keywords"></label>
+            <button onclick="onClearFilterClicked()">Clear Filter</button>
+            <button onclick="onRefreshClicked()">Refresh</button>
+        </div>
+        <div>
+            <p>format:</p>
+            <label for="fits">.fits</label>
+            <input type="checkbox" id="fits" CHECKED>
+            <label for="png">.png</label>
+            <input type="checkbox" id="png">
+        </div>
+        <div id="galleryContent"></div>
+        <div id="pagination"></div>
+    </div>
+    <script src="/shared/javascript/gallery.js"></script>
+</body>
+</html>
+

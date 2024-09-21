@@ -1,43 +1,167 @@
-#galleryContent {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 10px;
-}
-.image-container {
-    display: flex;
-    align-items: flex-start;
-    text-align: left;
-}
-.image-container img {
-    margin-right: 10px;
-}
-.image-container div {
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #e0e0e0;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 10px;
+    min-height: 100vh;
 }
 
-#content {
-    flex-grow: 1;
-    padding: 10px;
+header {
+    background-color: #1f1f1f;
+    color: #e0e0e0;
+    padding: 1rem;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav {
+    margin-top: 1rem;
+}
+
+nav button {
+    background-color: #333;
+    color: #e0e0e0;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+nav button:hover {
+    background-color: #555;
+}
+
+main {
+    flex: 1;
+    padding: 2rem;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
 }
 
 .image {
-    margin: 10px;
-    text-align: center;
+    background-color: #1f1f1f;
+    border: 1px solid #333;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s;
 }
+
+.image:hover {
+    transform: scale(1.05);
+}
+
 .image img {
-    max-width: 200px;
-    max-height: 200px;
+    width: 100%;
+    height: auto;
     display: block;
-    margin: 0 auto;
 }
 
-
-#galleryContent {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, auto);
-    gap: 10px;
+.image h2 {
+    font-size: 1.2rem;
+    margin: 0.5rem;
+    color: #e0e0e0;
 }
+
+.image p {
+    margin: 0.5rem;
+    color: #b0b0b0;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination button {
+    background-color: #333;
+    color: #e0e0e0;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pagination button:hover {
+    background-color: #555;
+}
+
+footer {
+    background-color: #1f1f1f;
+    color: #e0e0e0;
+    text-align: center;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column; /* Ensure elements are stacked vertically */
+}
+
+footer div {
+    width: 100%;
+    /*aspect-ratio: 16 / 9; !* Maintain a 16:9 aspect ratio *!*/
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/*footer div button {*/
+/*    margin: 0.5rem 0; !* Add vertical margin to buttons *!*/
+/*}*/
+
+.pageButton {
+    background: #1f1f1f;
+    border: none;
+    padding: 0;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.pageButton:hover {
+    color: #ffffff;
+}
+
+.pageButton:disabled {
+    background-color: #333;
+    color: #e0e0e0;
+    border-radius: 50%;
+    padding: 0.5rem 1rem;
+    cursor: not-allowed;
+}
+
+/*footer div button {*/
+/*    background: #1f1f1f;*/
+/*    border: none;*/
+/*    padding: 0;*/
+/*    color: #e0e0e0;*/
+/*    cursor: pointer;*/
+/*    font-size: 1rem;*/
+/*    transition: color 0.3s;*/
+/*}*/
+
+/*footer div button:hover {*/
+/*    color: #ffffff;*/
+/*}*/
+
+/*footer div button:disabled {*/
+/*    background-color: #333;*/
+/*    color: #e0e0e0;*/
+/*    border-radius: 50%;*/
+/*    padding: 0.5rem 1rem;*/
+/*    cursor: not-allowed;*/
+/*}*/
