@@ -158,6 +158,32 @@ def images(page: int):
 #
 #     return Response(generate(), content_type='application/octet-stream')
 
+# @app.route('/download')
+# def download_files():
+#     filenames = internal_states['displaying_list']
+#     existing_files = set(scan_images())  # make sure the files are still there
+#     filenames = [f for f in filenames if f in existing_files]
+#     filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
+#
+#     # Debug: Print filenames to ensure they are correct
+#     print("Filenames to be downloaded:", filenames)
+#
+#     def generate():
+#         for filename in filenames:
+#             file_path = os.path.join(PROJECT_PATH, "shared", "img", filename)
+#             # Debug: Check if the file exists
+#             if not os.path.exists(file_path):
+#                 print(f"File not found: {file_path}")
+#                 continue
+#             with open(file_path, 'rb') as f:
+#                 file_data = f.read()
+#                 name_bytes = filename.encode('utf-8')
+#                 yield len(name_bytes).to_bytes(1, 'little')
+#                 yield name_bytes
+#                 yield len(file_data).to_bytes(4, 'little')
+#                 yield file_data
+#
+#     return Response(generate(), content_type='application/octet-stream')
 @app.route('/download')
 def download_files():
     filenames = internal_states['displaying_list']
@@ -166,7 +192,7 @@ def download_files():
     filenames = [f"{f}.{e}" for f in filenames for e in ["fits", "png"]]
 
     # Debug: Print filenames to ensure they are correct
-    print("Filenames to be downloaded:", filenames)
+    # print("Filenames to be downloaded:", filenames)
 
     def generate():
         for filename in filenames:
@@ -183,7 +209,9 @@ def download_files():
                 yield len(file_data).to_bytes(4, 'little')
                 yield file_data
 
-    return Response(generate(), content_type='application/octet-stream')
+    response = Response(generate(), content_type='application/octet-stream')
+    response.headers['Content-Disposition'] = 'attachment; filename=image.bin'
+    return response
 
 # @app.route('/download')
 # def download():
@@ -643,6 +671,17 @@ def scan_images() -> list[str]:
     ]
 
 
+def restore_png():
+    img_dir = os.path.join(PROJECT_PATH, "shared", "img")
+    fits_images = [f for f in os.listdir(img_dir) if f.endswith('.fits')]
+    for fits in fits_images:
+        png_path = os.path.join(img_dir, fits.replace('.fits', '.png'))
+        if os.path.exists(png_path):
+            continue
+        camera.Camera.fits_to_png(os.path.join(img_dir, fits))
+        print(f"Restored {fits} to {png_path}")
+
+
 def read_fits_header(filename):
     with fits.open(filename) as hdul:
         header = hdul[0].header
@@ -652,14 +691,24 @@ def read_fits_header(filename):
             tag = 'none'
         except Exception:
             tag = 'none'
+        try:
+            res = {
+                "exposure": header["EXPTIME"],
+                "gain": header["EGAIN"],
+                "offset": header["OFFSET"],
+                "timestamp": header["DATE-OBS"],
+                "tag": tag
+            }
 
-        return {
-            "exposure": header["EXPTIME"],
-            "gain": header["EGAIN"],
-            "offset": header["OFFSET"],
-            "timestamp": header["DATE-OBS"],
-            "tag": tag
-        }
+        except KeyError:
+            res =  {
+                "exposure": "unknown",
+                "gain": "unknown",
+                "offset": "unknown",
+                "timestamp": "unknown",
+                "tag": tag
+            }
+        return res
 
 
 def load_specs():
@@ -689,6 +738,7 @@ if __name__ == '__main__':
         'displaying_list': scan_images(),
         'eta': "",
     }
+    restore_png()
 
     cam: Optional[camera.Camera] = None
     load_specs()

@@ -11,9 +11,32 @@ function fetchAndDisplayImages() {
         .catch(error => console.error('Error fetching images:', error));
 }
 
-function onDownloadClicked() {
-    window.location.href = '/download';
+// function onDownloadClicked() {
+//     window.location.href = '/download';
+// }
+
+function onDownloadClicked(filename) {
+    alert("requesting download");
+    fetch('/download', {
+        method: 'GET'
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        alert("Download will start shortly");
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = "images.bin";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => console.error('Error downloading files:', error));
 }
+
+
 // function onDownloadClicked() {
 //     fetch('/download', {
 //         method: 'GET'

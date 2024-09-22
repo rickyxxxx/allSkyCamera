@@ -267,3 +267,10 @@ class Camera:
 
         # Step 4: Save the resized image as a PNG file
         cv2.imwrite(f"{filename}.png", normalized_image)
+
+    @staticmethod
+    def fits_to_png(fits_file: str) -> None:
+        hdu = fits.open(fits_file)
+        data = hdu[0].data
+        Camera.array_to_png(data, fits_file.rstrip(".fits"))
+        hdu.close()
