@@ -1,9 +1,7 @@
-import io
 import os
 import sys
 import time
 import traceback
-import zipfile
 import psutil
 import datetime
 import platform
@@ -11,9 +9,8 @@ from typing import Iterable, Optional
 from threading import Thread, Event
 
 from astropy.io import fits
-from flask import Flask, render_template, send_file, jsonify, request, Response
-from zipstream import ZipStream
-import zipstream
+from flask import Flask, render_template, jsonify, request, Response
+
 
 
 # check and initialize the project path
