@@ -11,8 +11,6 @@ from threading import Thread, Event
 from astropy.io import fits
 from flask import Flask, render_template, jsonify, request, Response
 
-
-
 # check and initialize the project path
 try:
     print(os.environ)
