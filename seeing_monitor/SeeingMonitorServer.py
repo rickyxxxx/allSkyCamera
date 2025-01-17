@@ -1,6 +1,9 @@
 import numpy as np
 from flask import Flask, render_template, Response, request
 import cv2
+import time
+import threading
+from web.python.camera import Camera
 
 app = Flask(__name__, template_folder='.')
 
@@ -45,12 +48,17 @@ def control():
 def update_image_loop():
     global image_array
     while True:
-        # Update the image_array with new data
-        image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
-        time.sleep(0.1)  # Update every second
+        image_array, _ = cam.expose(10_000)
+        # # Update the image_array with new data
+        # image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
+        # time.sleep(0.1)  # Update every second
+
 
 if __name__ == '__main__':
-    import time
-    import threading
+    import os
+
+    PROJECT_PATH = os.environ["ALL_SKY_CAMERA"]
+    cam = Camera(PROJECT_PATH)
+
     threading.Thread(target=update_image_loop, daemon=True).start()
-    app.run(debug=True)
+    app.run(debug=True, host='192.168.0.73')
