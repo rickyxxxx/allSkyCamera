@@ -274,3 +274,16 @@ class Camera:
         data = hdu[0].data
         Camera.array_to_png(data, fits_file.rstrip(".fits"))
         hdu.close()
+
+
+if __name__ == "__main__":
+    import os
+    PROJECT_PATH = os.environ["ALL_SKY_CAMERA"]
+    cam = Camera(PROJECT_PATH)
+
+    print(cam.info())
+    image, _ = cam.expose(1000000, bbp=8)
+    cam.array_to_png(image, "full")
+    image, _ = cam.expose(1000000, bbp=8, exp_region=(0, 0, 100, 100))
+    cam.array_to_png(image, "part")
+    cam.close()
