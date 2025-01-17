@@ -47,7 +47,10 @@ def control():
 def update_image_loop():
     global image_array
     while True:
+        print("Exposing")
+        start = time.time()
         image_array, _ = cam.expose(10_000)
+        print(f"Time taken: {time.time() - start}")
         # # Update the image_array with new data
         # image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
         # time.sleep(0.1)  # Update every second
