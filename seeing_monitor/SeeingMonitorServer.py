@@ -49,7 +49,7 @@ def update_image_loop():
     while True:
         print("Exposing")
         start = time.time()
-        image_array, _ = cam.expose(10_000)
+        image_array, _ = cam.expose(10_000, exp_region=(0, 0, 100, 100))
         print(f"Time taken: {time.time() - start}")
         # # Update the image_array with new data
         # image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     import os
 
     PROJECT_PATH = os.environ["ALL_SKY_CAMERA"]
-    cam = Camera(PROJECT_PATH)
+    cam = Camera(PROJECT_PATH, emulate=False)
 
     threading.Thread(target=update_image_loop, daemon=True).start()
     app.run(debug=True, host='192.168.0.73')
