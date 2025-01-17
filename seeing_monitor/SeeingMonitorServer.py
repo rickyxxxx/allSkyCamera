@@ -3,8 +3,7 @@ from flask import Flask, render_template, Response, request
 import cv2
 import time
 import threading
-from web.python.camera import Camera
-
+from camera import Camera
 app = Flask(__name__, template_folder='.')
 
 # Global variable to store the numpy array
