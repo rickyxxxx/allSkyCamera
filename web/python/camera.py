@@ -223,8 +223,8 @@ class Camera:
             self.exposureTime = exposureTime
 
         """for exp_region: (start_x, start_y, width, height)"""
-        pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint16)
-        p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
+        pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint8)
+        p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
 
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
