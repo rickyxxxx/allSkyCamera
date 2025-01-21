@@ -25,7 +25,7 @@ extern "C" {
     unsigned int setOffset(qhyccd_handle *, int);
     unsigned int setExposureTime(qhyccd_handle *, int);
     unsigned int beginLiveStream(qhyccd_handle *);
-    unsigned int endLiveStream(qhyccd_handle *);
+    void endLiveStream(qhyccd_handle *);
 }
 
 
@@ -128,7 +128,7 @@ unsigned int beginLiveStream(qhyccd_handle *pCamHandle){
     return (QHYCCD_SUCCESS != retVal) ? 1 : 0;
 }
 
-unsigned int endLiveStream(qhyccd_handle *pCamHandle){
+void endLiveStream(qhyccd_handle *pCamHandle){
     StopQHYCCDLive(pCamHandle);
 }
 
