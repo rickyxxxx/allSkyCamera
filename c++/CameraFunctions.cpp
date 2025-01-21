@@ -181,6 +181,7 @@ unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData, uint32_t
     uint32_t w, h, channels;
     unsigned int retVal = GetQHYCCDLiveFrame(pCamHandle, &w, &h, &bpp, &channels, pImgData);
     if (QHYCCD_SUCCESS != retVal) {
+        std::cerr << "GetQHYCCDLiveFrame failed with error code: " << retVal << std::endl;
         StopQHYCCDLive(pCamHandle);
         return 2;
     }

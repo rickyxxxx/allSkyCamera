@@ -187,7 +187,7 @@ class Camera:
         if retVal:
             raise RuntimeError("Error setting bit depth")
 
-    def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=140, bbp=16) \
+    def expose(self, exposureTime, exp_region=None, bin_mode=(1, 1), gain=10, offset=0, bbp=16) \
             -> tuple[np.ndarray, float]:
         if self.emulate:
             time.sleep(exposureTime / 1000 / 1000)
