@@ -15,7 +15,7 @@ extern "C" {
     unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     unsigned int initCamera(qhyccd_handle *);
     unsigned int expose(qhyccd_handle *, unsigned char *, uint32_t, unsigned int *);
-    void disconnectCamera(qhyccd_handle *pCamHandle);
+    void disconnectCamera(qhyccd_handle *ppCam);
     void releaseSDK();
     unsigned int checkTraffic(qhyccd_handle *);
     unsigned int setResolution(qhyccd_handle *, unsigned int *);
@@ -53,12 +53,12 @@ unsigned int getCameraId(char *camId) {
         return 0;
     }
 
-    // release SDK resources
-    retVal = ReleaseQHYCCDResource();
-    if (retVal != QHYCCD_SUCCESS)
-        // error releasing SDK resources
-        // and the detected camera is not supported
-        return 4;
+//    // release SDK resources
+//    retVal = ReleaseQHYCCDResource();
+//    if (retVal != QHYCCD_SUCCESS)
+//        // error releasing SDK resources
+//        // and the detected camera is not supported
+//        return 4;
 
     return 3;          // the detected camera is not supported
 }
@@ -69,26 +69,26 @@ qhyccd_handle* connectCamera(char *camId) {
 }
 
 
-unsigned int initCamera(qhyccd_handle *pCamHandle) {
-    unsigned int retVal = SetQHYCCDStreamMode(pCamHandle, 1);  // Enable streaming mode for fast exposure
+unsigned int initCamera(qhyccd_handle *ppCam) {
+    unsigned int retVal = SetQHYCCDStreamMode(ppCam, 1);  // Enable streaming mode for fast exposure
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error setting the camera's stream mode
 
-    retVal = InitQHYCCD(pCamHandle);
+    retVal = InitQHYCCD(ppCam);
     if (QHYCCD_SUCCESS != retVal)
         return 2;
 
-    // Enable burst mode by default
-    retVal = EnableQHYCCDBurstMode(pCamHandle, true);
-    if (QHYCCD_SUCCESS != retVal)
-        return 3;
+//    // Enable burst mode by default
+//    retVal = EnableQHYCCDBurstMode(ppCam, true);
+//    if (QHYCCD_SUCCESS != retVal)
+//        return 3;
 
     return 0;
 }
 
-unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
+unsigned int getChipInfo(qhyccd_handle *ppCam, unsigned int *scanInfo, double *chipInfo) {
     // get chip info
-    unsigned int retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
+    unsigned int retVal = GetQHYCCDChipInfo(ppCam, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
                                             &chipInfo[2], &chipInfo[3], &scanInfo[2]);
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error getting the camera's chip info
@@ -96,46 +96,46 @@ unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, doub
     return 0;
 }
 
-unsigned int checkTraffic(qhyccd_handle *pCamHandle) {
+unsigned int checkTraffic(qhyccd_handle *ppCam) {
     // check usb traffic
-    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_USBTRAFFIC);
+    unsigned int retVal = IsQHYCCDControlAvailable(ppCam, CONTROL_USBTRAFFIC);
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error checking the camera's usb traffic
 
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_USBTRAFFIC, 10);
+    retVal = SetQHYCCDParam(ppCam, CONTROL_USBTRAFFIC, 10);
     if (QHYCCD_SUCCESS != retVal)
         return 2;       // error setting the camera's usb traffic
 
     return 0;
 }
 
-unsigned int setResolution(qhyccd_handle *pCamHandle, unsigned int *expRegion) {
-    unsigned int retVal = SetQHYCCDResolution(pCamHandle, expRegion[0], expRegion[1], expRegion[2], expRegion[3]);
+unsigned int setResolution(qhyccd_handle *ppCam, unsigned int *expRegion) {
+    unsigned int retVal = SetQHYCCDResolution(ppCam, expRegion[0], expRegion[1], expRegion[2], expRegion[3]);
     return QHYCCD_SUCCESS == retVal ? 0 : 1;
 }
 
-unsigned int setBinMode(qhyccd_handle *pCamHandle, int *binMode) {
-    unsigned int retVal = SetQHYCCDBinMode(pCamHandle, binMode[0], binMode[1]);
+unsigned int setBinMode(qhyccd_handle *ppCam, int *binMode) {
+    unsigned int retVal = SetQHYCCDBinMode(ppCam, binMode[0], binMode[1]);
     return QHYCCD_SUCCESS == retVal ? 0 : 1;
 }
 
-unsigned int setBitDepth(qhyccd_handle *pCamHandle, uint32_t bpp) {
+unsigned int setBitDepth(qhyccd_handle *ppCam, uint32_t bpp) {
     // check and set bit resolution
-    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
+    unsigned int retVal = IsQHYCCDControlAvailable(ppCam, CONTROL_TRANSFERBIT);
     if (QHYCCD_SUCCESS != retVal)
         return 1;       // error checking the camera's bit resolution
-    retVal = SetQHYCCDBitsMode(pCamHandle, bpp);
+    retVal = SetQHYCCDBitsMode(ppCam, bpp);
     if (QHYCCD_SUCCESS != retVal)
         return 2;       // error setting the camera's bit resolution
 
     return 0;
 }
 
-unsigned int setGain(qhyccd_handle *pCamHandle, int gain) {
-    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
+unsigned int setGain(qhyccd_handle *ppCam, int gain) {
+    unsigned int retVal = IsQHYCCDControlAvailable(ppCam, CONTROL_GAIN);
     if (retVal != QHYCCD_SUCCESS)
         return 1;       // error checking the camera's gain
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_GAIN, gain);
+    retVal = SetQHYCCDParam(ppCam, CONTROL_GAIN, gain);
     if (QHYCCD_SUCCESS != retVal) {
         getchar();
         return 2;       // error setting the camera's gain
@@ -144,12 +144,12 @@ unsigned int setGain(qhyccd_handle *pCamHandle, int gain) {
     return 0;
 }
 
-unsigned int setOffset(qhyccd_handle *pCamHandle, int offset) {
+unsigned int setOffset(qhyccd_handle *ppCam, int offset) {
     // check and set gain
-    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
+    unsigned int retVal = IsQHYCCDControlAvailable(ppCam, CONTROL_OFFSET);
     if (retVal != QHYCCD_SUCCESS)
         return 1;       // error checking the camera's gain
-    retVal = SetQHYCCDParam(pCamHandle, CONTROL_OFFSET, offset);
+    retVal = SetQHYCCDParam(ppCam, CONTROL_OFFSET, offset);
     if (QHYCCD_SUCCESS != retVal) {
         getchar();
         return 2;       // error setting the camera's gain
@@ -158,8 +158,8 @@ unsigned int setOffset(qhyccd_handle *pCamHandle, int offset) {
     return 0;
 }
 
-unsigned int setExposureTime(qhyccd_handle *pCamHandle, int exposureTime) {
-    unsigned int retVal = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, exposureTime);
+unsigned int setExposureTime(qhyccd_handle *ppCam, int exposureTime) {
+    unsigned int retVal = SetQHYCCDParam(ppCam, CONTROL_EXPOSURE, exposureTime);
     if (QHYCCD_SUCCESS != retVal){
         getchar();
         return 1;      // error setting the camera's exposure time
@@ -167,31 +167,35 @@ unsigned int setExposureTime(qhyccd_handle *pCamHandle, int exposureTime) {
     return 0;
 }
 
-unsigned int beginLiveStream(qhyccd_handle *pCamHandle){
-    unsigned int retVal = BeginQHYCCDLive(pCamHandle);
+unsigned int beginLiveStream(qhyccd_handle *ppCam){
+    unsigned int retVal = BeginQHYCCDLive(ppCam);
     return (QHYCCD_SUCCESS != retVal) ? 1 : 0;
 }
 
-void endLiveStream(qhyccd_handle *pCamHandle){
-    StopQHYCCDLive(pCamHandle);
+void endLiveStream(qhyccd_handle *ppCam){
+    StopQHYCCDLive(ppCam);
 }
 
-unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData, uint32_t bpp, unsigned int *expRegion) {
+unsigned int expose(qhyccd_handle *pCam, unsigned char *pImg, uint32_t bpp, unsigned int *expRegion) {
+    unsigned int channel = 1;   // for now, this drive only supports monochromatic cameras
+
+    unsigned int ret = GetQHYCCDLiveFrame(pCam, &w, &h, &bpp, &channel, pImg);
+
 
     uint32_t w, h, channels;
-    unsigned int retVal = GetQHYCCDLiveFrame(pCamHandle, &w, &h, &bpp, &channels, pImgData);
+    unsigned int retVal = GetQHYCCDLiveFrame(ppCam, &w, &h, &bpp, &channels, pImg);
     if (QHYCCD_SUCCESS != retVal) {
         std::cerr << "GetQHYCCDLiveFrame failed with error code: " << retVal << std::endl;
-        StopQHYCCDLive(pCamHandle);
+        StopQHYCCDLive(ppCam);
         return 2;
     }
 
     return 0;
 }
 
-void disconnectCamera(qhyccd_handle *pCamHandle) {
-    StopQHYCCDLive(pCamHandle);
-    CloseQHYCCD(pCamHandle);
+void disconnectCamera(qhyccd_handle *ppCam) {
+    StopQHYCCDLive(ppCam);
+    CloseQHYCCD(ppCam);
 }
 
 void releaseSDK() {

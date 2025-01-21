@@ -230,6 +230,7 @@ class Camera:
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
 
         if not self.streaming:
+            print("reconnecting video stream")
             self.funcs.beginLiveStream(self.cam_ptr)
             self.streaming = True
 
