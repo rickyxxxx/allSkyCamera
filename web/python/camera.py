@@ -28,6 +28,9 @@ class Camera:
         self.offset = None
         self.exposureTime = None
 
+        self.funcs.beginLiveStream(self.cam_ptr)
+        self.streaming = True
+
     def _get_sdk_version(self) -> str:
         if self.emulate:
             return "Emulated"
@@ -130,16 +133,25 @@ class Camera:
         self.funcs.releaseSDK()
 
     def _set_gain(self, gain: int) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         retVal = self.funcs.setGain(self.cam_ptr, gain)
         if retVal:
             raise RuntimeError("Error setting gain")
 
     def _set_offset(self, offset: int) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         retVal = self.funcs.setOffset(self.cam_ptr, offset)
         if retVal:
             raise RuntimeError("Error setting offset")
 
     def _set_exposure(self, exposureTime: int) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         if not (22 < exposureTime < 100000000):
             raise ValueError("Offset must be between 22us and 100s")
         retVal = self.funcs.setExposureTime(self.cam_ptr, exposureTime)
@@ -147,6 +159,9 @@ class Camera:
             raise RuntimeError("Error setting exposure")
 
     def _set_exp_region(self, exp_region: tuple[int, int, int, int]) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
         retVal = self.funcs.setResolution(self.cam_ptr, p_exp_region)
@@ -154,6 +169,9 @@ class Camera:
             raise RuntimeError("Error setting resolution")
 
     def _set_bin_mode(self, bin_mode: tuple[int, int]) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         bin_mode = np.array(bin_mode, dtype=np.int32)
         p_bin_mode = bin_mode.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
 
@@ -162,6 +180,9 @@ class Camera:
             raise RuntimeError("Error setting bin mode")
 
     def _set_bit_depth(self, bit_depth: int) -> None:
+        if self.streaming:
+            self.funcs.endLiveStream(self.cam_ptr)
+            self.streaming = False
         retVal = self.funcs.setBitDepth(self.cam_ptr, bit_depth)
         if retVal:
             raise RuntimeError("Error setting bit depth")
@@ -207,6 +228,10 @@ class Camera:
 
         exp_region = np.array(exp_region, dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+
+        if not self.streaming:
+            self.funcs.beginLiveStream(self.cam_ptr)
+            self.streaming = True
 
         exposure_start = time.time()
         retVal = self.funcs.expose(self.cam_ptr, p_pixels, bbp, p_exp_region)

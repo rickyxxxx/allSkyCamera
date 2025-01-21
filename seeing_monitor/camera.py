@@ -28,6 +28,9 @@ class Camera:
         self.offset = None
         self.exposureTime = None
 
+        self.funcs.star
+        self.streaming = False
+
     def _get_sdk_version(self) -> str:
         if self.emulate:
             return "Emulated"
