@@ -33,16 +33,6 @@ void SDKVersion(unsigned int *version) {
     GetQHYCCDSDKVersion(&version[0], &version[1], &version[2], &version[3]);
 }
 
-unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
-    // get chip info
-    unsigned int retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
-                                            &chipInfo[2], &chipInfo[3], &scanInfo[2]);
-    if (QHYCCD_SUCCESS != retVal)
-        return 1;       // error getting the camera's chip info
-
-    return 0;
-}
-
 unsigned int getCameraId(char *camId) {
     // init SDK
     unsigned int retVal = InitQHYCCDResource();
@@ -92,6 +82,51 @@ unsigned int initCamera(qhyccd_handle *pCamHandle) {
     retVal = EnableQHYCCDBurstMode(pCamHandle, true);
     if (QHYCCD_SUCCESS != retVal)
         return 3;
+
+    return 0;
+}
+
+unsigned int getChipInfo(qhyccd_handle *pCamHandle, unsigned int *scanInfo, double *chipInfo) {
+    // get chip info
+    unsigned int retVal = GetQHYCCDChipInfo(pCamHandle, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
+                                            &chipInfo[2], &chipInfo[3], &scanInfo[2]);
+    if (QHYCCD_SUCCESS != retVal)
+        return 1;       // error getting the camera's chip info
+
+    return 0;
+}
+
+unsigned int checkTraffic(qhyccd_handle *pCamHandle) {
+    // check usb traffic
+    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_USBTRAFFIC);
+    if (QHYCCD_SUCCESS != retVal)
+        return 1;       // error checking the camera's usb traffic
+
+    retVal = SetQHYCCDParam(pCamHandle, CONTROL_USBTRAFFIC, 10);
+    if (QHYCCD_SUCCESS != retVal)
+        return 2;       // error setting the camera's usb traffic
+
+    return 0;
+}
+
+unsigned int setResolution(qhyccd_handle *pCamHandle, unsigned int *expRegion) {
+    unsigned int retVal = SetQHYCCDResolution(pCamHandle, expRegion[0], expRegion[1], expRegion[2], expRegion[3]);
+    return QHYCCD_SUCCESS == retVal ? 0 : 1;
+}
+
+unsigned int setBinMode(qhyccd_handle *pCamHandle, int *binMode) {
+    unsigned int retVal = SetQHYCCDBinMode(pCamHandle, binMode[0], binMode[1]);
+    return QHYCCD_SUCCESS == retVal ? 0 : 1;
+}
+
+unsigned int setBitDepth(qhyccd_handle *pCamHandle, uint32_t bpp) {
+    // check and set bit resolution
+    unsigned int retVal = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
+    if (QHYCCD_SUCCESS != retVal)
+        return 1;       // error checking the camera's bit resolution
+    retVal = SetQHYCCDBitsMode(pCamHandle, bpp);
+    if (QHYCCD_SUCCESS != retVal)
+        return 2;       // error setting the camera's bit resolution
 
     return 0;
 }
