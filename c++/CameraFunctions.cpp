@@ -135,7 +135,7 @@ unsigned int endLiveStream(qhyccd_handle *pCamHandle){
 unsigned int expose(qhyccd_handle *pCamHandle, unsigned char *pImgData, uint32_t bpp, unsigned int *expRegion) {
 
     uint32_t w, h, channels;
-    retVal = GetQHYCCDLiveFrame(pCamHandle, &w, &h, &bpp, &channels, pImgData);
+    unsigned int retVal = GetQHYCCDLiveFrame(pCamHandle, &w, &h, &bpp, &channels, pImgData);
     if (QHYCCD_SUCCESS != retVal) {
         StopQHYCCDLive(pCamHandle);
         return 2;
