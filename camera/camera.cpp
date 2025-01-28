@@ -1,49 +1,50 @@
+#include <iostream>
 #include "qhyccd.h"
 
 const char *VERSION = "0.1.0";
 
-#define SUCCESS 0U
-#define QHYCCD_INIT_ERROR 1U
-#define NO_CAMERA_FOUND 2U
-#define TOO_MANY_CAMERA 3U
-#define CONNECTION_FAILED 4U
-#define ERROR_SETTING_READ_MODE 5U
-#define ERROR_SETTING_STREAM_MODE 6U
-#define CAMERA_INIT_ERROR 7U
-#define ERROR_GETTING_CHIP_INFO 8U
-#define ERROR_SETTING_BIN_MODE 9U
-#define ERROR_SETTING_OFFSET 10U
-#define ERROR_SETTING_USB_TRAFFIC 11U
-#define CONTROL_NOT_AVAILABLE 12U
-#define ERROR_SETTING_CCD_BIT_DEPTH 13U
-#define ERROR_SETTING_TRANSFER_BIT_DEPTH 14U
-#define ERROR_SETTING_REGION_OF_INTEREST 15U
-#define ERROR_SETTING_GAIN 16U
-#define ERROR_SETTING_EXPOSURE_TIME 17U
-#define ERROR_START_LIVE_STREAM 18U
-#define ERROR_STOP_LIVE_STREAM 19U
-#define FAILED_TO_EXPOSE 20U
+#define SUCCESS 0
+#define QHYCCD_INIT_ERROR 1
+#define NO_CAMERA_FOUND 2
+#define TOO_MANY_CAMERA 3
+#define CONNECTION_FAILED 4
+#define ERROR_SETTING_READ_MODE 5
+#define ERROR_SETTING_STREAM_MODE 6
+#define CAMERA_INIT_ERROR 7
+#define ERROR_GETTING_CHIP_INFO 8
+#define ERROR_SETTING_BIN_MODE 9
+#define ERROR_SETTING_OFFSET 10
+#define ERROR_SETTING_USB_TRAFFIC 11
+#define CONTROL_NOT_AVAILABLE 12
+#define ERROR_SETTING_CCD_BIT_DEPTH 13
+#define ERROR_SETTING_TRANSFER_BIT_DEPTH 14
+#define ERROR_SETTING_REGION_OF_INTEREST 15
+#define ERROR_SETTING_GAIN 16
+#define ERROR_SETTING_EXPOSURE_TIME 17
+#define ERROR_START_LIVE_STREAM 18
+#define ERROR_STOP_LIVE_STREAM 19
+#define FAILED_TO_EXPOSE 20
 
 
 extern "C"{
-    unsigned int getCameraId(char *);
+    int getCameraId(char *);
     qhyccd_handle* getCameraHandle(char *);
-    unsigned int getChipInfo(qhyccd_handle *, unsigned int *, double *);
-    unsigned int configContinuousMode(qhyccd_handle *);
-    unsigned int setBitDepth(qhyccd_handle *, uint32_t);
-    unsigned int setROI(qhyccd_handle *, unsigned int *);
-    unsigned int setGain(qhyccd_handle *, int);
-    unsigned int setExposureTime(qhyccd_handle *, int);
-    unsigned int beginLiveStream(qhyccd_handle *);
-    unsigned int endLiveStream(qhyccd_handle *);
-    unsigned int expose(qhyccd_handle *, unsigned char *, uint32_t, unsigned int *);
+    int getChipInfo(qhyccd_handle *, unsigned int *, double *);
+    int configContinuousMode(qhyccd_handle *);
+    int setBitDepth(qhyccd_handle *, uint32_t);
+    int setROI(qhyccd_handle *, uint32_t *);
+    int setGain(qhyccd_handle *, double);
+    int setExposureTime(qhyccd_handle *, double);
+    int beginLiveStream(qhyccd_handle *);
+    int endLiveStream(qhyccd_handle *);
+    int expose(qhyccd_handle *, uint8_t *, uint32_t, uint32_t *);
     void close(qhyccd_handle *);
 }
 
 
-unsigned int getCameraId(char *camId){
+int getCameraId(char *camId){
 
-    unsigned int ret = InitQHYCCDResource();
+    uint32_t ret = InitQHYCCDResource();
     if (ret != QHYCCD_SUCCESS)
         return QHYCCD_INIT_ERROR;
 
@@ -65,9 +66,9 @@ qhyccd_handle* getCameraHandle(char *camId) {
     return OpenQHYCCD(camId);
 }
 
-unsigned int getChipInfo(qhyccd_handle *pCam, unsigned int *scanInfo, double *chipInfo) {
+int getChipInfo(qhyccd_handle *pCam, unsigned int *scanInfo, double *chipInfo) {
     // get chip info
-    unsigned int ret = GetQHYCCDChipInfo(pCam, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
+    uint32_t ret = GetQHYCCDChipInfo(pCam, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
                                          &chipInfo[2], &chipInfo[3], &scanInfo[2]);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_GETTING_CHIP_INFO;
@@ -75,9 +76,9 @@ unsigned int getChipInfo(qhyccd_handle *pCam, unsigned int *scanInfo, double *ch
     return SUCCESS;
 }
 
-unsigned int useDefaultSettings(qhyccd_handle *pCam){
+int useDefaultSettings(qhyccd_handle *pCam){
     // default settings those will not be changed in any configurations
-    unsigned int ret = SetQHYCCDBinMode(pCam, 1, 1);
+    uint32_t ret = SetQHYCCDBinMode(pCam, 1, 1);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_BIN_MODE;
 
@@ -93,8 +94,8 @@ unsigned int useDefaultSettings(qhyccd_handle *pCam){
     return SUCCESS;
 }
 
-unsigned int configContinuousMode(qhyccd_handle *pCam){
-    unsigned int ret = SetQHYCCDReadMode(pCam, 0);
+int configContinuousMode(qhyccd_handle *pCam){
+    uint32_t ret = SetQHYCCDReadMode(pCam, 0);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_READ_MODE;
 
@@ -109,73 +110,79 @@ unsigned int configContinuousMode(qhyccd_handle *pCam){
     return useDefaultSettings(pCam);
 }
 
-unsigned int setBitDepth(qhyccd_handle *pCam, uint32_t bpp) {
-    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_TRANSFERBIT);
-    if (ret != QHYCCD_SUCCESS)
-        return CONTROL_NOT_AVAILABLE;
+int setBitDepth(qhyccd_handle *pCam, uint32_t bpp) {
+//    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_TRANSFERBIT);
+//    if (ret != QHYCCD_SUCCESS)
+//        return CONTROL_NOT_AVAILABLE;
 
     // bit depth read by the CCD
-    ret = SetQHYCCDBitsMode(pCam, bpp);
+    uint32_t ret = SetQHYCCDBitsMode(pCam, bpp);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_CCD_BIT_DEPTH;
 
-    // bit depth used in data transfer
-    ret = SetQHYCCDParam(pCam, CONTROL_TRANSFERBIT, (float) bpp);
-    if (ret != QHYCCD_SUCCESS)
-        return ERROR_SETTING_TRANSFER_BIT_DEPTH;
+//    // bit depth used in data transfer
+//    ret = SetQHYCCDParam(pCam, CONTROL_TRANSFERBIT, (double) bpp);
+//    if (ret != QHYCCD_SUCCESS)
+//        return ERROR_SETTING_TRANSFER_BIT_DEPTH;
 
     return SUCCESS;
 }
 
-unsigned int setROI(qhyccd_handle *pCam, unsigned int *expRegion){
+int setROI(qhyccd_handle *pCam, uint32_t *expRegion){
     unsigned int ret = SetQHYCCDResolution(pCam, expRegion[0], expRegion[1], expRegion[2], expRegion[3]);
     return ret == QHYCCD_SUCCESS ? SUCCESS : ERROR_SETTING_REGION_OF_INTEREST;
-
 }
 
-unsigned int setGain(qhyccd_handle *pCam, int gain) {
-    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_GAIN);
-    if (ret != QHYCCD_SUCCESS)
-        return CONTROL_NOT_AVAILABLE;
+int setGain(qhyccd_handle *pCam, double gain) {
+//    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_GAIN);
+//    if (ret != QHYCCD_SUCCESS)
+//        return CONTROL_NOT_AVAILABLE;
 
-    ret = SetQHYCCDParam(pCam, CONTROL_GAIN, gain);
+    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_GAIN, gain);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_GAIN;
 
     return SUCCESS;
 }
 
-unsigned int setExposureTime(qhyccd_handle *pCam, int exposureTime) {
-    unsigned int ret = SetQHYCCDParam(pCam, CONTROL_EXPOSURE, exposureTime);
+int setExposureTime(qhyccd_handle *pCam, double exposureTime) {
+    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_EXPOSURE, exposureTime);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_EXPOSURE_TIME;
 
     return SUCCESS;
 }
 
-unsigned int beginLiveStream(qhyccd_handle *pCam){
-    unsigned int ret = BeginQHYCCDLive(pCam);
+int beginLiveStream(qhyccd_handle *pCam){
+    uint32_t ret = BeginQHYCCDLive(pCam);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_START_LIVE_STREAM;
 
     return SUCCESS;
 }
 
-unsigned int endLiveStream(qhyccd_handle *pCam){
-    unsigned int ret = StopQHYCCDLive(pCam);
+int endLiveStream(qhyccd_handle *pCam){
+    uint32_t ret = StopQHYCCDLive(pCam);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_STOP_LIVE_STREAM;
 
     return SUCCESS;
 }
 
-unsigned int expose(qhyccd_handle *pCam, unsigned char *pImg, uint32_t bpp, unsigned int *expRegion) {
+int expose(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
     // for now, this drive only supports monochromatic cameras
-    unsigned int channel = 1;
+    uint32_t channel = 1;
 
-    unsigned int ret = GetQHYCCDLiveFrame(pCam, &expRegion[2], &expRegion[3], &bpp, &channel, pImg);
-    if (ret != QHYCCD_SUCCESS)
-        return FAILED_TO_EXPOSE;
+    uint32_t ret = QHYCCD_ERROR;
+
+    int ctr = 0;
+    while(ret != QHYCCD_SUCCESS){
+        ret = GetQHYCCDLiveFrame(pCam, &expRegion[2], &expRegion[3], &bpp, &channel, pImg);
+
+        if (ctr++ > 100)
+            return FAILED_TO_EXPOSE;
+    }
+
 
     return SUCCESS;
 }

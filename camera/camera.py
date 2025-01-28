@@ -30,10 +30,6 @@ class Camera:
         self.exp_time: int | None = None
         self.bit_depth: int | None = None
         self.gain: int | None = None
-        self.pixels_np = None
-        self.p_pixels = None
-        self.roi_np = None
-        self.p_roi = None
 
         self.get_chip_info()
 
@@ -121,6 +117,8 @@ class Camera:
         self._error_check(self.lib.setGain)(self.cam_ptr, gain)
 
     def set_roi(self, xy: tuple[int, int], wh: tuple[int, int]) -> None:
+        xy = max(xy[0], 0), (max(xy[1], 0))
+        xy = min(xy[0], self.resolution[0] - wh[0]), min(xy[0], self.resolution[1] - wh[1])
         self._pause_live_stream()
         exp_region = np.array((*xy, *wh), dtype=np.uint32)
         p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
@@ -147,71 +145,45 @@ class Camera:
             self.gain = gain
 
         dtype = np.uint16 if bbp == 16 else np.uint8
-        self.pixels_np = np.zeros(roi[1][0] * roi[1][1], dtype=dtype)
-        self.p_pixels = self.pixels_np.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))
+        imageData = np.zeros(roi[1][0] * roi[1][1], dtype=dtype)
+        ctype = ctypes.c_uint16 if bbp == 16 else ctypes.c_uint8
+        p_image = imageData.ctypes.data_as(ctypes.POINTER(ctype))
 
-        self.roi_np = np.array(roi, dtype=np.uint32).flatten()
-        self.p_roi = self.roi_np.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
+        wh = roi[1][0], roi[1][1]
+        roi = np.array(roi, dtype=np.uint32).flatten()
+        p_roi = roi.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
 
         if not self.streaming:
             self._error_check(self.lib.beginLiveStream)(self.cam_ptr)
             self.streaming = True
 
         exposure_start = time()
-        self._error_check(self.lib.expose)(self.cam_ptr, self.p_pixels, bbp, self.p_roi)
+        self._error_check(self.lib.expose)(self.cam_ptr, p_image, bbp, p_roi)
         actual_exposure_time = time() - exposure_start
 
-        return self.pixels_np.reshape(roi[-1]), actual_exposure_time
+        return imageData.reshape(wh), actual_exposure_time
 
     def close(self):
         self.lib.close(self.cam_ptr)
 
 
+if __name__ == "__main__":
+    cam = Camera()
+    cam.config_continuous_mode()
+    app = CameraApp(cam)
+    plt.show()
+
 # if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#     import matplotlib
+#     matplotlib.use('TkAgg')
 #     cam = Camera()
 #     cam.config_continuous_mode()
-#     image, time = cam.expose(10_000, ((0, 0), (500, 500)), bbp=8)
-#     print(image, time)
-#     cam.close()
+#
+#     tracking = False
+#
+#     while True:
+#         frame, exp_time = cam.expose(10_000, gain=500, bbp=8)
+#         print(f"Exposure time: {exp_time:.2f}s")
+#         print(np.sum(frame))
 
-
-
-if __name__ == "__main__":
-    print(os.getcwd())
-    path = os.path.join(os.getcwd(), "qhyDriver.so")
-    print(path)
-    funcs = ctypes.CDLL(path)
-
-    camera_id = ctypes.create_string_buffer(32)
-    id = funcs.getCameraId(camera_id)
-
-    pCam = funcs.getCameraHandle(camera_id)
-    funcs.configContinuousMode(pCam)
-
-    scan_info = np.zeros(3, dtype=np.uint32)
-    p_scan_info = scan_info.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
-    chip_info = np.zeros(4, dtype=np.float64)
-    p_chip_info = chip_info.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
-
-
-    exp_region = (0, 0, 3856, 2160)
-    exp_region = np.array(exp_region, dtype=np.uint32)
-    p_exp_region = exp_region.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32))
-    retVal = funcs.setROI(pCam, p_exp_region)
-
-    funcs.setBitDepth(pCam, 8)
-
-    funcs.setExposureTime(pCam, 10_000)
-    funcs.setGain(pCam, 10)
-    funcs.beginLiveStream(pCam)
-
-    pixels = np.zeros(exp_region[2] * exp_region[3], dtype=np.uint8)
-    p_pixels = pixels.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
-    for _ in range(20):
-        exposure_start = time()
-        retVal = funcs.expose(pCam, p_pixels, 8, p_exp_region)
-        actual_exposure = time() - exposure_start
-
-        pixels = pixels.reshape((3856, 2160))
-
-    funcs.endLiveStream(pCam)

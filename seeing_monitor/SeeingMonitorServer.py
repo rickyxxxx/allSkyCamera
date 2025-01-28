@@ -1,66 +1,92 @@
+from flask import Flask, render_template, jsonify
+from flask_socketio import SocketIO
+import matplotlib.pyplot as plt
+import io
+import base64
 import numpy as np
-from flask import Flask, render_template, Response, request
-import cv2
-import time
 import threading
+import time
+import os
+import sys
+
+import matplotlib
+matplotlib.use('Agg')  # Ensures compatibility in headless mode
+
+cam_path = os.path.join(os.path.dirname(__file__), '../camera')
+sys.path.append(cam_path)
 from camera import Camera
-app = Flask(__name__, template_folder='.')
 
-# Global variable to store the numpy array
-image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Global state variables
+state = {
+    'exposure_time': 100.0,  # Default exposure time
+    'gain': 1.0,           # Default gain
+    'is_locked': False,
+    'is_tracking': False
+}
 
-def generate_frames_from_array():
-    global image_array
+def generate_plot():
+    """ Generates a dynamic plot and sends it to clients in real-time """
     while True:
-        ret, buffer = cv2.imencode('.jpg', image_array)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        frame, exp_time = cam.expose(int(state['exposure_time']), gain=int(state['gain']), bbp=8, roi=((0, 0), (100, 100)))
+        plt.figure()
 
+        plt.imshow(frame.transpose(), cmap='gray')
+
+        # Convert the plot to a PNG image
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        img_base64 = base64.b64encode(img.getvalue()).decode()
+
+        plt.close()
+
+        # Send the new image to the frontend
+        socketio.emit('update_plot', {'image': img_base64})
+
+        print("Updated plot")
+        time.sleep(0.3)  # Update every 2 seconds
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/get_state')
+def get_state():
+    """ Returns the current state of controls """
+    return jsonify(state)
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames_from_array(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@socketio.on('change_setting')
+def handle_change_setting(data):
+    """ Handles the exposure time and gain setting change """
+    state['exposure_time'] = float(data['exposure'])
+    state['gain'] = float(data['gain'])
+    socketio.emit('update_state', state)  # Broadcast updated state to all clients
 
+@socketio.on('toggle_lock')
+def handle_toggle_lock():
+    """ Toggles the lock mode """
+    state['is_locked'] = not state['is_locked']
+    if not state['is_locked']:
+        state['is_tracking'] = False  # Reset tracking if unlocked
+    socketio.emit('update_state', state)
 
-@app.route('/update_image', methods=['POST'])
-def update_image():
-    global image_array
-    data = request.json
-    new_image = np.array(data['image'], dtype=np.uint8)
-    image_array = new_image
-    return "Image updated"
-
-
-@app.route('/control', methods=['POST'])
-def control():
-    # Handle control actions here
-    return "Control action received"
-
-
-def update_image_loop():
-    global image_array
-    while True:
-        print("Exposing")
-        start = time.time()
-        image_array, _ = cam.expose(10_000, exp_region=(0, 0, 100, 100))
-        print(f"Time taken: {time.time() - start}")
-        # # Update the image_array with new data
-        # image_array = np.random.randint(0, 256, (480, 640), dtype=np.uint8)
-        # time.sleep(0.1)  # Update every second
+@socketio.on('toggle_track')
+def handle_toggle_track():
+    """ Toggles tracking mode (only when locked) """
+    if state['is_locked']:
+        state['is_tracking'] = not state['is_tracking']
+    socketio.emit('update_state', state)
 
 
 if __name__ == '__main__':
-    import os
+    import eventlet
+    cam = Camera()
+    cam.config_continuous_mode()
 
-    PROJECT_PATH = os.environ["ALL_SKY_CAMERA"]
-    cam = Camera(PROJECT_PATH, emulate=False)
+    eventlet.monkey_patch()
+    threading.Thread(target=generate_plot, daemon=True).start()
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
 
-    threading.Thread(target=update_image_loop, daemon=True).start()
-    app.run(debug=True, host='192.168.0.73')
