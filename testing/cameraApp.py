@@ -1,6 +1,8 @@
 import os
 import cv2
+import time
 import numpy as np
+from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider, TextBox
 from matplotlib.animation import FuncAnimation
@@ -21,13 +23,18 @@ class RealTimeImaging:
         self.img_data = np.random.rand(100, 100)
         self.im = self.ax.imshow(self.img_data, cmap='gray', vmin=0, vmax=1)
         self.locked_image = None
-        self.roi = ((0, 0), (100, 100))
+        self.target_size = 100
+        self.roi = ((0, 0), (self.target_size, self.target_size))
+        self.session_name = None
+        self.session_used = False
+        self.history = []
+
 
         # 初始化控制参数
         self.tracking = False
         self.locking = False
-        self.exposure = 100 * 1000  # 初始曝光时间（ms）
-        self.gain = 100
+        self.exposure = 10 * 1000  # 初始曝光时间（ms）
+        self.gain = 40
         self.unit = 'ms'
         self.ctr = 0
 
@@ -120,7 +127,7 @@ class RealTimeImaging:
 
         return x_center, y_center
 
-    def image_filter(self, image, target_size=100):
+    def image_filter(self, image):
         masked = image.copy()
         masked[masked != 0] = 255
 
@@ -130,8 +137,8 @@ class RealTimeImaging:
             nonlocal masked, size
 
             size /= 2
-            if size < target_size:
-                size = target_size
+            if size < self.target_size:
+                size = self.target_size
             x_cen, y_cen = self.weighted_average(masked)
 
             x0, x1 = max(0, int(x_cen - size // 2)), min(masked.shape[1], int(x_cen + size // 2))
@@ -145,41 +152,66 @@ class RealTimeImaging:
 
         x_offset, y_offset = 0, 0
 
-        while size != target_size:
+        while size != self.target_size:
             offset = trim_image()
 
             x_offset += offset[0]
             y_offset += offset[1]
 
-        roi = slice(y_offset, y_offset + target_size), slice(x_offset, x_offset + target_size)
-        return image[roi], (y_offset + target_size // 2, x_offset + target_size // 2)
+        roi = slice(y_offset, y_offset + self.target_size), slice(x_offset, x_offset + self.target_size)
+        return image[roi], (y_offset + self.target_size // 2, x_offset + self.target_size // 2)
 
     def _update(self, frame):
         if not self.locking:
             new_data, _ = cam.expose(int(self.exposure), gain=int(self.gain), bbp=8)
+            
             self.locked_image = None
             self.ctr = 0
         elif self.locking and not self.tracking:
+            if self.session_used or self.session_name is None:
+                if self.history != []:
+                    df = np.array(self.history)
+                    np.savetxt(os.path.join(self.session_name, "data.csv"), df, delimiter=',')
+                folder_name = str(datetime.now())
+                self.session_name = os.path.join("images", folder_name)
+                os.mkdir(self.session_name)
+                self.session_used = False
+                self.ctr = 0
+                self.history = []
+            image_path = os.path.join(self.session_name, "full_frame.png")
+
             if self.locked_image is not None:
                 return [self.im]
-            img, _ = cam.expose(int(self.exposure), gain=int(self.gain), bbp=8)
+            img, _ = cam.expose(int(self.exposure), gain=int(self.gain), bbp=8)            
+            img = img.reshape(img.shape[1], img.shape[0])
+            cv2.imwrite(image_path, img.astype(np.uint8))
+
             img, roi = self.image_filter(img)
 
             self.locked_image = img
             new_data = img
-            self.roi = ((int(roi[0] - 50), int(roi[1] - 50)), (100, 100))
+            self.roi = ((int(roi[1] - self.target_size // 2), int(roi[0] - self.target_size // 2)), (self.target_size, self.target_size))
             self.ctr = 0
         else:
+            self.session_used = True
             self.ctr += 1
             new_data, _ = cam.expose(int(self.exposure), gain=int(self.gain), bbp=8, roi=self.roi)
             self.locked_image = None
+            x_cen, y_cen = self.weighted_average(new_data)
             if self.ctr % 200 == 0:
-                x_cen, y_cen = self.weighted_average(new_data)
-                self.roi = ((int(self.roi[0][0] + x_cen - 50), int(self.roi[0][1] + y_cen - 50)), (100, 100))
-            image_path = os.path.join('images', f'frame_{self.ctr:07d}.png')
+                hs = self.target_size // 2
+                dr = ((x_cen - hs) ** 2 + (y_cen - hs) ** 2) ** 0.5
+                print(dr)
+                if dr <= 2:
+                    print("change roi")
+                    self.roi = ((int(self.roi[0][1] + x_cen - hs), int(self.roi[0][0] + y_cen - hs)), (self.target_size, self.target_size))
+            hs = self.target_size // 2
+            center = (int(self.roi[0][1] + x_cen - hs), int(self.roi[0][0] + y_cen - hs))
+            self.history.append(center)
+            image_path = os.path.join(self.session_name, f'frame_{self.ctr:07d}.png')
             cv2.imwrite(image_path, new_data.astype(np.uint8))
-
-        new_data = new_data.transpose()
+            
+#        new_data = new_data.reshape(new_data.shape[1], new_data.shape[0])
 
         self.im.set_data(new_data)
         self.im.set_clim(vmin=0, vmax=255)
@@ -194,6 +226,8 @@ class RealTimeImaging:
             self.ax.set_title(f"ROI: ({x:.0f}, {y:.0f})")
         else:
             self.ax.set_title('')
+            
+        # time.sleep(5)
 
         return [self.im]
 

@@ -24,6 +24,7 @@ const char *VERSION = "0.1.0";
 #define ERROR_START_LIVE_STREAM 18
 #define ERROR_STOP_LIVE_STREAM 19
 #define FAILED_TO_EXPOSE 20
+#define ERROR_SETTING_DEBAYER_MODE 21
 
 
 extern "C"{
@@ -31,16 +32,29 @@ extern "C"{
     qhyccd_handle* getCameraHandle(char *);
     int getChipInfo(qhyccd_handle *, unsigned int *, double *);
     int configContinuousMode(qhyccd_handle *);
+    int configSingleMode(qhyccd_handle *);
     int setBitDepth(qhyccd_handle *, uint32_t);
     int setROI(qhyccd_handle *, uint32_t *);
-    int setGain(qhyccd_handle *, double);
-    int setExposureTime(qhyccd_handle *, double);
+    int setGain(qhyccd_handle *, int);
+    int setExposureTime(qhyccd_handle *, int);
     int beginLiveStream(qhyccd_handle *);
     int endLiveStream(qhyccd_handle *);
-    int expose(qhyccd_handle *, uint8_t *, uint32_t, uint32_t *);
+    int exposeLive(qhyccd_handle *, uint8_t *, uint32_t, uint32_t *);
+    int exposeSingle(qhyccd_handle *, uint8_t *, uint32_t, uint32_t *);
     void close(qhyccd_handle *);
+    int isColor(qhyccd_handle *);
+    int getBayerMatrix(qhyccd_handle *);
+    void readoutmode(qhyccd_handle *pCam);
+    void test(qhyccd_handle *);
 }
-
+void test(qhyccd_handle *pCam){
+    uint32_t ret = IsQHYCCDControlAvailable(pCam,QHYCCD_3A_AUTOFOCUS);
+    if (ret == QHYCCD_SUCCESS){
+	printf("not available");
+    } else {
+	printf("Yes");
+    } 
+}
 
 int getCameraId(char *camId){
 
@@ -67,6 +81,7 @@ qhyccd_handle* getCameraHandle(char *camId) {
 }
 
 int getChipInfo(qhyccd_handle *pCam, unsigned int *scanInfo, double *chipInfo) {
+    //  readoutmode(pCam);
     // get chip info
     uint32_t ret = GetQHYCCDChipInfo(pCam, &chipInfo[0], &chipInfo[1], &scanInfo[0], &scanInfo[1],
                                          &chipInfo[2], &chipInfo[3], &scanInfo[2]);
@@ -87,9 +102,16 @@ int useDefaultSettings(qhyccd_handle *pCam){
         return ERROR_SETTING_OFFSET;
 
     // set USB traffic mode to maximum speed: 0.0
-    ret = SetQHYCCDParam(pCam, CONTROL_USBTRAFFIC, 0.0);
+    ret = SetQHYCCDParam(pCam, CONTROL_USBTRAFFIC, 50.0);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_USB_TRAFFIC;
+
+    ret = IsQHYCCDControlAvailable(pCam, CAM_IS_COLOR);
+    if (ret == QHYCCD_SUCCESS){     // setup for colored cameras
+        ret = SetQHYCCDDebayerOnOff(pCam, true);
+        if (ret != QHYCCD_SUCCESS)
+            return ERROR_SETTING_DEBAYER_MODE;
+    }
 
     return SUCCESS;
 }
@@ -110,6 +132,22 @@ int configContinuousMode(qhyccd_handle *pCam){
     return useDefaultSettings(pCam);
 }
 
+int configSingleMode(qhyccd_handle *pCam){
+    uint32_t ret = SetQHYCCDReadMode(pCam, 0);
+    if (ret != QHYCCD_SUCCESS)
+        return ERROR_SETTING_READ_MODE;
+        
+    ret = SetQHYCCDStreamMode(pCam, 0);
+    if (ret != QHYCCD_SUCCESS)
+        return ERROR_SETTING_STREAM_MODE;
+        
+    ret = InitQHYCCD(pCam);
+    if (ret != QHYCCD_SUCCESS)
+        return CAMERA_INIT_ERROR;
+        
+    return useDefaultSettings(pCam);
+}
+
 int setBitDepth(qhyccd_handle *pCam, uint32_t bpp) {
 //    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_TRANSFERBIT);
 //    if (ret != QHYCCD_SUCCESS)
@@ -120,10 +158,10 @@ int setBitDepth(qhyccd_handle *pCam, uint32_t bpp) {
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_CCD_BIT_DEPTH;
 
-//    // bit depth used in data transfer
-//    ret = SetQHYCCDParam(pCam, CONTROL_TRANSFERBIT, (double) bpp);
-//    if (ret != QHYCCD_SUCCESS)
-//        return ERROR_SETTING_TRANSFER_BIT_DEPTH;
+    // bit depth used in data transfer
+    ret = SetQHYCCDParam(pCam, CONTROL_TRANSFERBIT, (double) bpp);
+    if (ret != QHYCCD_SUCCESS)
+        return ERROR_SETTING_TRANSFER_BIT_DEPTH;
 
     return SUCCESS;
 }
@@ -133,20 +171,19 @@ int setROI(qhyccd_handle *pCam, uint32_t *expRegion){
     return ret == QHYCCD_SUCCESS ? SUCCESS : ERROR_SETTING_REGION_OF_INTEREST;
 }
 
-int setGain(qhyccd_handle *pCam, double gain) {
-//    unsigned int ret = IsQHYCCDControlAvailable(pCam, CONTROL_GAIN);
-//    if (ret != QHYCCD_SUCCESS)
-//        return CONTROL_NOT_AVAILABLE;
-
-    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_GAIN, gain);
+int setGain(qhyccd_handle *pCam, int gain) {
+    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_GAIN, (double) gain);
+    
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_GAIN;
 
     return SUCCESS;
 }
 
-int setExposureTime(qhyccd_handle *pCam, double exposureTime) {
-    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_EXPOSURE, exposureTime);
+
+int setExposureTime(qhyccd_handle *pCam, int exposureTime) {
+    uint32_t ret = SetQHYCCDParam(pCam, CONTROL_EXPOSURE, (double) exposureTime);
+
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_EXPOSURE_TIME;
 
@@ -169,7 +206,7 @@ int endLiveStream(qhyccd_handle *pCam){
     return SUCCESS;
 }
 
-int expose(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
+int exposeLive(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
     // for now, this drive only supports monochromatic cameras
     uint32_t channel = 1;
 
@@ -179,7 +216,7 @@ int expose(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion
     while(ret != QHYCCD_SUCCESS){
         ret = GetQHYCCDLiveFrame(pCam, &expRegion[2], &expRegion[3], &bpp, &channel, pImg);
 
-        if (ctr++ > 100)
+        if (ctr++ > 1000)
             return FAILED_TO_EXPOSE;
     }
 
@@ -187,8 +224,58 @@ int expose(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion
     return SUCCESS;
 }
 
+int exposeSingle(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
+    uint32_t channel = 1;
+    
+    uint32_t ret = ExpQHYCCDSingleFrame(pCam);
+    ret = GetQHYCCDSingleFrame(pCam, &expRegion[2], &expRegion[3], &bpp, &channel, pImg);
+    
+    return SUCCESS;
+}
+
+//void startBurstMode(qhyccd_handle *pCam){
+//    uint32_t w = 100;
+//    uint32_t h = 100;
+//    uint32_t bpp = 8;
+//    uint32_t channel = 1;
+//    uint8_t *imgData = (uint8_t)malloc(GetQHYCCDMemLength(pCam));
+//    beginLiveStream(pCam);
+//    for (int i = 0; i < 2; ++i)
+//        GetQHYCCDLiveFrame(pCam, &w, &h, &bpp, &channel, imgData);
+    
+//    uint32_t ret = EnableQHYCCDBurstMode(pCam, true);
+//    ret = SetQHYCCDBurstModeStartEnd(pCam, start, end);
+//    ret = SetQHYCCDBurstModePatchNumber(pCam, 32001);      
+//}
+
 void close(qhyccd_handle *pCam){
     StopQHYCCDLive(pCam);
     CloseQHYCCD(pCam);
     ReleaseQHYCCDResource();
+}
+
+void readoutmode(qhyccd_handle *pCam){
+    uint32_t ret = QHYCCD_ERROR;
+    uint32_t numberOfMode;
+    ret = GetQHYCCDNumberOfReadModes(pCam, &numberOfMode);
+    if (ret == QHYCCD_SUCCESS){
+        printf("Number of Readout Modes: %d\n", numberOfMode);
+    } else {
+        return;
+    }
+
+    char name[80] = {0};
+    for (int i = 0; i < numberOfMode; ++i){
+        ret = GetQHYCCDReadModeName(pCam, i, name);
+        printf("Current Read Mode (%d) is %s\n", i, name);
+    }
+}
+
+int isColor(qhyccd_handle *pCam){
+    uint32_t ret = IsQHYCCDControlAvailable(pCam, CAM_IS_COLOR);
+    return ret == QHYCCD_SUCCESS ? 1 : 0;
+}
+
+int getBayerMatrix(qhyccd_handle *pCam){
+    return IsQHYCCDControlAvailable(pCam, CAM_COLOR);
 }
