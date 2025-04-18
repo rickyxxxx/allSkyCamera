@@ -23,7 +23,6 @@ class Camera:
 
         self.camera_id = self.get_camera_id()
         self.cam_ptr = self.get_camera_handle()
-        self.test()
         self.color = self.is_color()
         self.bayer_matrix = self.get_bayer_matrix()
         try:
@@ -206,6 +205,7 @@ class Camera:
         channel = 3 if self.color else 1
         if self.image_data is None:
             self.image_data = np.zeros(roi[1][0] * roi[1][1] * channel, dtype=dtype)
+            # print(roi[1][0] * roi[1][1] * channel)
         else:
             self.image_data.fill(0)
         # image_data = np.zeros(roi[1][0] * roi[1][1] * channel, dtype=dtype)
@@ -242,28 +242,31 @@ class Camera:
     def model(self):
         return self.camera_id.split("-")[0]
 
-    def draw_text(self, text: str, data: np.ndarray) -> np.ndarray:
+    def draw_text(self, text: str, data: np.ndarray):
         box_size = (600, 200)
         mode = "L" if len(data.shape) == 2 else "RGB"
-        new_image = Image.new(mode, box_size, color=0)
+        new_image = Image.new(mode, box_size, color=0)  # background black
 
         draw = ImageDraw.Draw(new_image)
 
         font_path = os.path.join(os.path.dirname(__file__), "../assets/font.ttf")
         font = ImageFont.truetype(font_path, 30)
 
-        # Draw text (black)
-        color = (1 << self.bit_depth) - 1
+        # Set white color for text
+        if mode == "L":
+            color = 255  # white in grayscale
+        else:
+            color = (255, 255, 255)  # white in RGB
+
         draw.text((0, 0), text, font=font, fill=color)
 
         # Convert image to NumPy array
         dtype = np.uint8 if self.bit_depth == 8 else np.uint16
-
         data[0:box_size[1], 0:box_size[0]] = np.array(new_image).astype(dtype)
 
     def exposure_text(self) -> str:
-        loc = self.gps.get_location_str()
-        datetime = self.gps.get_datetime()
+        # loc = self.gps.get_location_str()
+        # datetime = self.gps.get_datetime()
         expt, unit = self.exp_time, "us"
         if expt >= 1000:
             expt /= 1000
@@ -273,40 +276,105 @@ class Camera:
             unit = "s"
         setting = f"exposure time: {expt:.2f} {unit}"
         setting += f", gain: {self.gain}"
-        return loc + "\n" + datetime + "\n" + setting
+        return setting
+        # return loc + "\n" + datetime + "\n" + setting
 
     def test(self):
         print("start testing")
         self.lib.test(self.cam_ptr)
-        print("end testing")
+        print("\nend testing")
+
+    def save_jpg(self, filename, image):
+        image = Image.fromarray(image, mode='RGB')
+        image.save(filename, format='JPEG')
+
+
+def get_exp_time(cam, exp_now, target_sum):
+    exp_list = [exp_now * (1 + 0.05 * i) for i in range(5)]
+    pix_sum = []
+    for exp_ in exp_list:
+        img, _ = cam.expose(int(exp_), gain=gain, bbp=16, roi=roi)
+        pix_sum.append(np.sum(img.flatten()))
+
+    a, b = np.polyfit(exp_list, pix_sum, 1)
+    print(a, b)
+    exp_setting = (target_sum - b) / a
+    return int(exp_setting)
 
 
 if __name__ == "__main__":
     from PIL import Image
     import numpy as np
-    import psutil
+    from time import time
+    import cv2
+    import requests
+    from astropy.io import fits
 
     cam = Camera()
     cam.config_single_mode()
-    ctr = 0
-    try:
-        while True:
-            ctr += 1
-            img, _ = cam.expose(250, gain=10)
-            ram_per = psutil.virtual_memory()[2]
-            ram_used = psutil.virtual_memory()[3] / 1000_000_000
-            print(f"{ctr}: {np.sum(img.flatten())}")
-            print(f"{ram_per}%  used: {ram_used:.2f}GB")
-    except Exception:
-        pass
-    # cam.test()
+    # cam.config_continuous_mode()
 
-#    img, t = cam.expose(10_000, gain=10)
-#    info = cam.exposure_text()
+    # exp = [50 * (i + 1) for i in range(1, 20)]
+    # exp += [50 * (i + 1) * 100 for i in range(200)]
+    # exp += [i * 1_000_000 for i in range(2, 11)]
 
-#    cam.draw_text(info, img)
-#    image = Image.fromarray(img, 'RGB')
-#    image.save(f"./image_{0}.png"
-    finally:
-        cam.close()
+    tw = 2500
+    roi = ((3856 - tw) / 2, 0), (tw, 2180)
+
+    exp = 250
+    gain = 60
+    cttr = 0
+
+    while True:
+
+        server_url = 'http://camserver.physics.ucsb.edu/upload_live'
+
+        img, _ = cam.expose(exp, gain=gain, bbp=16, roi=roi)
+        image_8bit = (img / 256).astype(np.uint8)
+
+        pixelSum = np.sum(img.flatten())
+
+        base = 1e9
+
+        if not 150 * base <= pixelSum <= 250 * base:
+            exp = get_exp_time(cam, exp, 200 * base)
+
+        text = cam.exposure_text()
+        cam.draw_text(text, image_8bit)
+
+        print(pixelSum)
+        # if cttr % 5 == 0:
+        #     fits_data = np.transpose(img, (2, 0, 1))  # (channels, height, width)
+        #
+        #     # Create FITS HDU
+        #     hdu = fits.PrimaryHDU(fits_data)
+        #     hdul = fits.HDUList([hdu])
+        #
+        #     # Create a BytesIO object and write the FITS file into it
+        #     hdul.writeto("image.fits", overwrite=True)
+        #     print("fits saved")
+
+        success, encoded_image = cv2.imencode('.png', image_8bit)
+        response = requests.post(server_url, data=encoded_image.tobytes())
+        cttr += 1
+    # roi = (838, 0), (2180, 2180)
+    #
+    # img, _ = cam.expose(250, gain=1, bbp=16, roi=roi)
+    # print(f"roi: {cam.roi}")
+    # start = time()
+    # pix_sum = np.sum(img.flatten())
+    # print(f"calculating time: {time() - start}")
+    # print(f"pixel sum: {pix_sum}")
+    # cam.close()
+    # try:
+    #     while True:
+    #         start = time()
+    #         img, _ = cam.expose(250, gain=1, bbp=16)
+    #         s = np.sum(img.flatten())
+    #         print(s)
+    #         # cam.lib.exposeLive(cam.cam_ptr, p_image, 16, p_roi)
+    #         print(f"fps: {100 / (time() - start): .3f}")
+    #
+    # except Exception:
+    #     cam.close()
 

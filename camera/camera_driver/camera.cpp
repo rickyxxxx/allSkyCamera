@@ -48,11 +48,11 @@ extern "C"{
     void test(qhyccd_handle *);
 }
 void test(qhyccd_handle *pCam){
-    uint32_t ret = IsQHYCCDControlAvailable(pCam,QHYCCD_3A_AUTOFOCUS);
+    uint32_t ret = IsQHYCCDControlAvailable(pCam, AUTO_WHITEBALANCE);
     if (ret == QHYCCD_SUCCESS){
-	printf("not available");
+	    printf("glow Available");
     } else {
-	printf("Yes");
+	    printf("Auto Not Available");
     } 
 }
 
@@ -102,7 +102,7 @@ int useDefaultSettings(qhyccd_handle *pCam){
         return ERROR_SETTING_OFFSET;
 
     // set USB traffic mode to maximum speed: 0.0
-    ret = SetQHYCCDParam(pCam, CONTROL_USBTRAFFIC, 50.0);
+    ret = SetQHYCCDParam(pCam, CONTROL_USBTRAFFIC, 0.0);
     if (ret != QHYCCD_SUCCESS)
         return ERROR_SETTING_USB_TRAFFIC;
 
@@ -208,7 +208,7 @@ int endLiveStream(qhyccd_handle *pCam){
 
 int exposeLive(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
     // for now, this drive only supports monochromatic cameras
-    uint32_t channel = 1;
+    uint32_t channel = 3;
 
     uint32_t ret = QHYCCD_ERROR;
 
@@ -220,33 +220,17 @@ int exposeLive(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRe
             return FAILED_TO_EXPOSE;
     }
 
-
     return SUCCESS;
 }
 
 int exposeSingle(qhyccd_handle *pCam, uint8_t *pImg, uint32_t bpp, uint32_t *expRegion) {
-    uint32_t channel = 1;
+    uint32_t channel = 3;
     
     uint32_t ret = ExpQHYCCDSingleFrame(pCam);
     ret = GetQHYCCDSingleFrame(pCam, &expRegion[2], &expRegion[3], &bpp, &channel, pImg);
     
     return SUCCESS;
 }
-
-//void startBurstMode(qhyccd_handle *pCam){
-//    uint32_t w = 100;
-//    uint32_t h = 100;
-//    uint32_t bpp = 8;
-//    uint32_t channel = 1;
-//    uint8_t *imgData = (uint8_t)malloc(GetQHYCCDMemLength(pCam));
-//    beginLiveStream(pCam);
-//    for (int i = 0; i < 2; ++i)
-//        GetQHYCCDLiveFrame(pCam, &w, &h, &bpp, &channel, imgData);
-    
-//    uint32_t ret = EnableQHYCCDBurstMode(pCam, true);
-//    ret = SetQHYCCDBurstModeStartEnd(pCam, start, end);
-//    ret = SetQHYCCDBurstModePatchNumber(pCam, 32001);      
-//}
 
 void close(qhyccd_handle *pCam){
     StopQHYCCDLive(pCam);
