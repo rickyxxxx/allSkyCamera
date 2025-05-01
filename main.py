@@ -315,7 +315,8 @@ if __name__ == "__main__":
 
             # Convert to PIL Image and save as JPEG
             image_name = f"{id}_{ts}.jpg"
-            image = Image.fromarray(image_8bit, mode='RGB')
+            mode = 'RGB' if cam.is_color() else "L"
+            image = Image.fromarray(image_8bit, mode=mode)
             image.save(buf, format='JPEG')
             buf.seek(0)
             # file_size = os.path.getsize(image_name)
