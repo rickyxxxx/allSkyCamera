@@ -44,15 +44,32 @@ def upload_image(image_buffer, image_name, type='image/jpg', ts="ts", gain=0, ex
     files = {
         "file": (image_name, image_buffer, type)  # Include filename and MIME type
     }
+    startt, endt = gss()
+    startt = startt.replace(tzinfo=None)
+    endt = endt.replace(tzinfo=None)# now aware
+    nowtime = datetime.now() + tdelta(hours=7)
+    nts = nowtime.strftime("%Y-%m-%dT%H:%M:%S.%f")
+    try:
+        a, b = nts.split(".")
+        b = b[:3]
+        nts = a + "." + b
+    except Exception:
+        pass
+
+    isDaytime = "1" if startt <= datetime.now() <= endt else "0"
     form = {
         "id": cam.camera_id,
         "name": "UCSB Broida Roof - Color",
-        "date": ts,
+        "date": nts,
         "bit": 16,
         "gain": gain,
         "exp": exp,
         "lng": -119.8610,
-        "lat": 34.4133
+        "lat": 34.4133,
+        "temp": aht.get_temperature(),
+        "hum": aht.get_humidity(),
+        "tz": "America/Los_Angeles",
+        "isDay": isDaytime,
     }
     try:
         response = requests.post(f"{domain}/upload_image", files=files, data=form)
@@ -238,6 +255,7 @@ if __name__ == "__main__":
     from time import time as tt    
     import os
     import numpy as np
+    from datetime import timedelta as tdelta
     cam = Camera()
     gss = init_sun_rise_set_calculator()
     tw = 2500
@@ -251,8 +269,8 @@ if __name__ == "__main__":
         aht = AHT20()
         cam.config_single_mode()
 
-        st2 = Thread(target=ns)
-        st2.start()
+        # st2 = Thread(target=ns)
+        # st2.start()
         starttime = tt()
         interval = 300
         id = cam.get_camera_id()
@@ -326,8 +344,8 @@ if __name__ == "__main__":
             if not 150 * base <= pixel_sum <= 250 * base:
                 exp = auto_exp(cam, 250, 200 * base, gain, roi)
                 print("auto exp called")
-                if exp == 1_000_000:
-                    gain = auto_gain(cam, 250, 200 * base, gain, roi)
+                # if exp == 1_000_000:
+                #     gain = auto_gain(cam, 250, 200 * base, gain, roi)
 
             while tt() - starttime < interval:
             	sleep(1)
