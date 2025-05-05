@@ -3,7 +3,6 @@ import io
 
 import requests
 from camera.camera import Camera
-from threading import Thread
 from time import sleep
 from PIL import Image
 import datetime
@@ -19,7 +18,6 @@ from typing import Callable
 
 
 domain = "http://camserver.physics.ucsb.edu"
-settings = {}
 
 
 def get_camera_settings():
@@ -104,23 +102,6 @@ class AHT20:
     def get_humidity(self):
         return self.sensor.relative_humidity
 
-
-def ns():
-    while True:
-        try:
-            tstamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
-            form = {
-                "id": cam.camera_id,
-                "date": tstamp,
-                "temp": aht.get_temperature(),
-                "humidity": aht.get_humidity()
-            }
-
-            sleep(60)
-            response = requests.post(f"{domain}/upload_data", data=form)
-        except Exception:
-            pass
 
 def get_gain(get_sunrise_sunset: Callable):
     sunrise, sunset = get_sunrise_sunset()
