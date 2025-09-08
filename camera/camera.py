@@ -6,17 +6,16 @@ from typing import Callable
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-# from camera.gps_driver.GTU7 import GTU7
+from gps import GTU7
+from thermal import AHT20
 
 
 class Camera:
 
     def __init__(self) -> None:
-        self.package_path = os.path.join(os.path.dirname(__file__), "camera_driver")
-        lib_name = [f for f in os.listdir(self.package_path) if f.endswith(".so")][0]
-        self.lib = ctypes.CDLL(os.path.join(self.package_path, lib_name))
+        self.lib = self._load_library()
+        self.error_list = self._load_error_types()
 
-        self.error_list: dict[int:str] = self._load_errors()
         self.configured = False
         self.single_frame_mode = True
         self.streaming = False
@@ -25,10 +24,8 @@ class Camera:
         self.cam_ptr = self.get_camera_handle()
         self.color = self.is_color()
         self.bayer_matrix = self.get_bayer_matrix()
-        try:
-            self.gps = GTU7()
-        except:
-            pass
+        self.gps = GTU7()
+        self.thermal = AHT20()
 
         self.resolution: tuple[int, int] = (0, 0)
         self.chip_size: tuple[float, float] = (0.0, 0.0)
@@ -42,6 +39,34 @@ class Camera:
 
         self.get_chip_info()
 
+    @staticmethod
+    def _load_library() -> ctypes:
+        current_folder = os.path.dirname(__file__)
+        lib_files = filter(lambda x: x.endswith(".so"), os.listdir(current_folder))
+
+        if (lib_file := next(lib_files, None)) is None:
+            raise FileNotFoundError("Camera library file do not exists!")
+
+        # TODO: check for the number of .so files under the folder and only keep the latest.
+
+        return ctypes.CDLL(os.path.join(current_folder, lib_file))
+
+    @staticmethod
+    def _load_error_types() -> dict[int: str]:
+        errors: dict[int: str] = {}
+        path = os.path.join(os.path.dirname(__file__), "camera.cpp")
+
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                if not line.startswith("#define"):
+                    continue
+                line = line.lstrip("#define ").rstrip("U\n")
+                msg, value = line.split(" ")
+                msg = msg.replace("_", " ").capitalize()
+                errors[int(value)] = msg
+
+        return errors
+
     def _error_check(self, func: Callable) -> Callable:
         def inner(*args, **kwargs) -> None:
             if not (ret := func(*args, **kwargs)):
@@ -50,22 +75,6 @@ class Camera:
             raise RuntimeError(f"Driver error: {err_msg}")
 
         return inner
-
-    def _load_errors(self) -> dict[int: str]:
-        error_list = {}
-        cpp_path = os.path.join(self.package_path, "camera.cpp")
-
-        f = open(cpp_path, 'r')
-        for line in f.readlines():
-            if not line.startswith("#define"):
-                continue
-            line = line.lstrip("#define ").rstrip("U\n")
-            msg, value = line.split(" ")
-            msg = msg.replace("_", " ").capitalize()
-            error_list[int(value)] = msg
-        f.close()
-
-        return error_list
 
     def get_camera_id(self) -> str:
         camera_id = ctypes.create_string_buffer(32)
@@ -89,16 +98,12 @@ class Camera:
 
         self._error_check(self.lib.getChipInfo)(self.cam_ptr, p_scan_info, p_chip_info)
 
-        # self._error_check(
-        #     self.lib.getChipInfo(self.cam_ptr, p_scan_info, p_chip_info)
-        # )
-
         self.resolution = int(scan_info[0]), int(scan_info[1])
         self.chip_size = float(chip_info[0]), float(chip_info[1])
         self.pixel_size = float(chip_info[2]), float(chip_info[3])
         self.max_bit_depth = int(scan_info[2])
 
-    def is_color(self) -> bool:
+    def is_color(self) -> bool:     # check if the current camera is a colored camera
         ret = self.lib.isColor(self.cam_ptr)
         return bool(ret)
 
@@ -127,14 +132,8 @@ class Camera:
         self.streaming = False
 
     def set_bit_depth(self, bit_depth: int) -> None:
-        
-        # if self.color:
-        #     bit_depth = 8
-
         if self.bit_depth == bit_depth:
             return
-
-        print(f"change bbp to: {bit_depth}")
 
         if bit_depth not in [8, 16]:
             raise ValueError(f"Bit depth must be 8 or 16, got {bit_depth}")
@@ -147,7 +146,7 @@ class Camera:
     def set_exposure_time(self, exposure_time: int) -> None:
         if self.exp_time == exposure_time:
             return
-        print(f"change exp to: {exposure_time}")
+
         if not 100 <= exposure_time <= 100_000_000:
             raise ValueError("Exposure time must be between 100us and 100s")
         if not self.single_frame_mode:
@@ -159,8 +158,6 @@ class Camera:
     def set_gain(self, gain: int) -> None:
         if self.gain == gain:
             return
-
-        print(f"change gain to: {gain}")
 
         if gain < 1:
             raise ValueError("Gain must be greater than or equal to 1")
@@ -178,8 +175,6 @@ class Camera:
                 and self.roi[1][1] == wh[1]):
             return
 
-        print(f"change roi to: {xy}, {wh}")
-
         xy = max(xy[0], 0), (max(xy[1], 0))
         xy = min(xy[0], self.resolution[0] - wh[0]), min(xy[1], self.resolution[1] - wh[1])
         if not self.single_frame_mode:
@@ -190,7 +185,7 @@ class Camera:
 
         self.roi = xy, wh
 
-    def expose(self, exposure_time, roi=None, gain=10, bbp=16) -> tuple[np.ndarray, float]:
+    def expose(self, exposure_time, roi=None, gain=10, bbp=16) -> np.ndarray:
         if roi is None:
             roi = (0, 0), self.resolution
 
@@ -205,10 +200,8 @@ class Camera:
         channel = 3 if self.color else 1
         if self.image_data is None:
             self.image_data = np.zeros(roi[1][0] * roi[1][1] * channel, dtype=dtype)
-            # print(roi[1][0] * roi[1][1] * channel)
         else:
             self.image_data.fill(0)
-        # image_data = np.zeros(roi[1][0] * roi[1][1] * channel, dtype=dtype)
         ctype = ctypes.c_uint16 if bbp == 16 else ctypes.c_uint8
         p_image = self.image_data.ctypes.data_as(ctypes.POINTER(ctype))
 
@@ -220,19 +213,18 @@ class Camera:
             self._error_check(self.lib.beginLiveStream)(self.cam_ptr)   
             self.streaming = True
 
-        exposure_start = time()
         if self.single_frame_mode:
             self._error_check(self.lib.exposeSingle)(self.cam_ptr, p_image, bbp, p_roi)
         else:
             self._error_check(self.lib.exposeLive)(self.cam_ptr, p_image, bbp, p_roi)
-        actual_exposure_time = time() - exposure_start
 
         img_shape = (wh[1], wh[0], channel) if self.color else (wh[1], wh[0])
 
-        return self.image_data.reshape(img_shape), actual_exposure_time
+        return self.image_data.reshape(img_shape)
 
     def close(self):
         self.lib.close(self.cam_ptr)
+        self.gps.close()
 
     @property
     def serial_number(self):
@@ -264,99 +256,83 @@ class Camera:
         dtype = np.uint8 if self.bit_depth == 8 else np.uint16
         data[0:box_size[1], 0:box_size[0]] = np.array(new_image).astype(dtype)
 
-    def exposure_text(self) -> str:
-        # loc = self.gps.get_location_str()
-        # datetime = self.gps.get_datetime()
-        expt, unit = self.exp_time, "us"
-        if expt >= 1000:
-            expt /= 1000
-            unit = "ms"
-        if expt >= 1000:
-            expt /= 1000
-            unit = "s"
-        setting = f"exposure time: {expt:.2f} {unit}"
-        setting += f", gain: {self.gain}"
-        return setting
-        # return loc + "\n" + datetime + "\n" + setting
-
-    def test(self):
-        print("start testing")
-        self.lib.test(self.cam_ptr)
-        print("\nend testing")
-
     def save_jpg(self, filename, image):
         image = Image.fromarray(image, mode='RGB')
         image.save(filename, format='JPEG')
 
 
-def get_exp_time(cam, exp_now, target_sum):
-    exp_list = [exp_now * (1 + 0.05 * i) for i in range(5)]
-    pix_sum = []
-    for exp_ in exp_list:
-        img, _ = cam.expose(int(exp_), gain=gain, bbp=16, roi=roi)
-        pix_sum.append(np.sum(img.flatten()))
-
-    a, b = np.polyfit(exp_list, pix_sum, 1)
-    print(a, b)
-    exp_setting = (target_sum - b) / a
-    return int(exp_setting)
-
-
 if __name__ == "__main__":
-    from PIL import Image
-    import numpy as np
-    from time import time
-    import cv2
-    import requests
-    from astropy.io import fits
-
     cam = Camera()
-    cam.config_single_mode()
-    # cam.config_continuous_mode()
+    print(cam.model, cam.serial_number, cam.gps.status, cam.thermal.temp, cam.thermal.humidity)
+    cam.close()
 
-    # exp = [50 * (i + 1) for i in range(1, 20)]
-    # exp += [50 * (i + 1) * 100 for i in range(200)]
-    # exp += [i * 1_000_000 for i in range(2, 11)]
+# def get_exp_time(cam, exp_now, target_sum):
+#     exp_list = [exp_now * (1 + 0.05 * i) for i in range(5)]
+#     pix_sum = []
+#     for exp_ in exp_list:
+#         img, _ = cam.expose(int(exp_), gain=gain, bbp=16, roi=roi)
+#         pix_sum.append(np.sum(img.flatten()))
+#
+#     a, b = np.polyfit(exp_list, pix_sum, 1)
+#     print(a, b)
+#     exp_setting = (target_sum - b) / a
+#     return int(exp_setting)
 
-    tw = 2500
-    roi = ((3856 - tw) / 2, 0), (tw, 2180)
 
-    exp = 250
-    gain = 60
-    cttr = 0
-
-    while True:
-
-        server_url = 'http://camserver.physics.ucsb.edu/upload_live'
-
-        img, _ = cam.expose(exp, gain=gain, bbp=16, roi=roi)
-        image_8bit = (img / 256).astype(np.uint8)
-
-        pixelSum = np.sum(img.flatten())
-
-        base = 1e9
-
-        if not 150 * base <= pixelSum <= 250 * base:
-            exp = get_exp_time(cam, exp, 200 * base)
-
-        text = cam.exposure_text()
-        cam.draw_text(text, image_8bit)
-
-        print(pixelSum)
-        # if cttr % 5 == 0:
-        #     fits_data = np.transpose(img, (2, 0, 1))  # (channels, height, width)
-        #
-        #     # Create FITS HDU
-        #     hdu = fits.PrimaryHDU(fits_data)
-        #     hdul = fits.HDUList([hdu])
-        #
-        #     # Create a BytesIO object and write the FITS file into it
-        #     hdul.writeto("image.fits", overwrite=True)
-        #     print("fits saved")
-
-        success, encoded_image = cv2.imencode('.png', image_8bit)
-        response = requests.post(server_url, data=encoded_image.tobytes())
-        cttr += 1
+# if __name__ == "__main__":
+#     from PIL import Image
+#     import numpy as np
+#     import cv2
+#     import requests
+#     from astropy.io import fits
+#
+#     cam = Camera()
+#     cam.config_single_mode()
+#     # cam.config_continuous_mode()
+#
+#     # exp = [50 * (i + 1) for i in range(1, 20)]
+#     # exp += [50 * (i + 1) * 100 for i in range(200)]
+#     # exp += [i * 1_000_000 for i in range(2, 11)]
+#
+#     tw = 2500
+#     roi = ((3856 - tw) / 2, 0), (tw, 2180)
+#
+#     exp = 250
+#     gain = 60
+#     cttr = 0
+#
+#     while True:
+#
+#         server_url = 'http://camserver.physics.ucsb.edu/upload_live'
+#
+#         img, _ = cam.expose(exp, gain=gain, bbp=16, roi=roi)
+#         image_8bit = (img / 256).astype(np.uint8)
+#
+#         pixelSum = np.sum(img.flatten())
+#
+#         base = 1e9
+#
+#         if not 150 * base <= pixelSum <= 250 * base:
+#             exp = get_exp_time(cam, exp, 200 * base)
+#
+#         text = cam.exposure_text()
+#         cam.draw_text(text, image_8bit)
+#
+#         print(pixelSum)
+#         # if cttr % 5 == 0:
+#         #     fits_data = np.transpose(img, (2, 0, 1))  # (channels, height, width)
+#         #
+#         #     # Create FITS HDU
+#         #     hdu = fits.PrimaryHDU(fits_data)
+#         #     hdul = fits.HDUList([hdu])
+#         #
+#         #     # Create a BytesIO object and write the FITS file into it
+#         #     hdul.writeto("image.fits", overwrite=True)
+#         #     print("fits saved")
+#
+#         success, encoded_image = cv2.imencode('.png', image_8bit)
+#         response = requests.post(server_url, data=encoded_image.tobytes())
+#         cttr += 1
     # roi = (838, 0), (2180, 2180)
     #
     # img, _ = cam.expose(250, gain=1, bbp=16, roi=roi)

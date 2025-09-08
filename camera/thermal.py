@@ -7,6 +7,9 @@ class AHT20:
         i2c = board.I2C()  # uses board.SCL and board.SDA
         self._sensor = adafruit_ahtx0.AHTx0(i2c)
 
+        ret = self._sensor.calibrate()
+        print(f"Thermal Sensor Calibrated: {ret}")
+
     @property
     def temp(self) -> str:
         return f"{self._sensor.temperature:.1f}°C"
