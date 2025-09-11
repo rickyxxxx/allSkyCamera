@@ -1,0 +1,16 @@
+[Unit]
+Description=seeing monitor script 
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+ExecStart=/home/pi/all-sky_cam/bin/python3 /home/pi/allSkyCamera/seeing_monitor.py
+WorkingDirectory=/home/pi/allSkyCamera
+Restart=on-failure
+RestartSec=10 
+
+[Install]
+WantedBy=multi-user.target
+
+
