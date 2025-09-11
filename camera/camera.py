@@ -1,11 +1,13 @@
 import os
+import sys
 import ctypes
-from time import time
 from typing import Callable
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+
+sys.path.append(os.path.dirname(__file__))
 from gps import GTU7
 from thermal import AHT20
 
@@ -186,6 +188,7 @@ class Camera:
         self.roi = xy, wh
 
     def expose(self, exposure_time, roi=None, gain=10, bbp=16) -> np.ndarray:
+        # exposure_time in us
         if roi is None:
             roi = (0, 0), self.resolution
 
@@ -257,26 +260,17 @@ class Camera:
         data[0:box_size[1], 0:box_size[0]] = np.array(new_image).astype(dtype)
 
     def save_jpg(self, filename, image):
-        image = Image.fromarray(image, mode='RGB')
+        image = Image.fromarray(image, mode='L')
         image.save(filename, format='JPEG')
 
 
 if __name__ == "__main__":
     cam = Camera()
+    cam.config_single_mode()
     print(cam.model, cam.serial_number, cam.gps.status, cam.thermal.temp, cam.thermal.humidity)
+    img = cam.expose(1_000, bbp=8)
+    cam.save_jpg("img.jpg", img)
     cam.close()
-
-# def get_exp_time(cam, exp_now, target_sum):
-#     exp_list = [exp_now * (1 + 0.05 * i) for i in range(5)]
-#     pix_sum = []
-#     for exp_ in exp_list:
-#         img, _ = cam.expose(int(exp_), gain=gain, bbp=16, roi=roi)
-#         pix_sum.append(np.sum(img.flatten()))
-#
-#     a, b = np.polyfit(exp_list, pix_sum, 1)
-#     print(a, b)
-#     exp_setting = (target_sum - b) / a
-#     return int(exp_setting)
 
 
 # if __name__ == "__main__":
