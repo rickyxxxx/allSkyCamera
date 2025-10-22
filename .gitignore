@@ -596,4 +596,5 @@ FodyWeavers.xsd
 # stop tracking temporary images in temp/
 /temp/
 # qhyDriver should be compiled on restart, thus stop tracking it.
-/camera/qhyDriver.so
+/cpp/build/qhyDriver.so
+/old/

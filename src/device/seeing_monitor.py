@@ -23,27 +23,27 @@ def frame_post_process(image: np.ndarray, **kwargs) -> None:
     print(response.status_code, kwargs.get('timestamp', 'no timestamp'))
 
 
-def main_loop() -> None:
-    while True:
-        frame = camera.expose(exposure_time=EXPOSURE_TIME, gain=GAIN, bbp=BPP)
-        timestamp = datetime.now().strftime("%S.%f")
-        with queue_lock:
-            if task_queue.qsize() >= MAX_PENDING_TASKS:
-                continue
-            task_queue.put((frame, timestamp))
-        sleep(1)
+# def main_loop() -> None:
+#     while True:
+#         frame = camera.expose(exposure_time=EXPOSURE_TIME, gain=GAIN, bbp=BPP)
+#         timestamp = datetime.now().strftime("%S.%f")
+#         with queue_lock:
+#             if task_queue.qsize() >= MAX_PENDING_TASKS:
+#                 continue
+#             task_queue.put((frame, timestamp))
+#         sleep(1)
+#
+#
+# def worker() -> None:
+#     while not terminated.is_set():
+#         with queue_lock:
+#             if task_queue.qsize() == 0:
+#                 continue
+#             frame, timestamp = task_queue.get()
+#         frame_post_process(frame, timestamp=timestamp)
 
 
-def worker() -> None:
-    while not terminated.is_set():
-        with queue_lock:
-            if task_queue.qsize() == 0:
-                continue
-            frame, timestamp = task_queue.get()
-        frame_post_process(frame, timestamp=timestamp)
-
-
-if __name__ == "__main__":
+def start_seeing_monitor():
     EXPOSURE_TIME = 10_000  # unit in us
     GAIN = 1
     BPP = 8  # bit depth

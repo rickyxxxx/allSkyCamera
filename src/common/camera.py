@@ -6,10 +6,11 @@ from typing import Callable
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.append(PROJECT_ROOT)
 
-sys.path.append(os.path.dirname(__file__))
-from gps import GTU7
-from thermal import AHT20
+from src.common.gps import GTU7
+from src.common.thermal import AHT20
 
 
 class Camera:
@@ -26,7 +27,7 @@ class Camera:
         self.cam_ptr = self.get_camera_handle()
         self.color = self.is_color()
         self.bayer_matrix = self.get_bayer_matrix()
-        self.gps = GTU7()
+        self.gps = GTU7().connect()
         self.thermal = AHT20()
 
         self.resolution: tuple[int, int] = (0, 0)
@@ -43,20 +44,20 @@ class Camera:
 
     @staticmethod
     def _load_library() -> ctypes:
-        current_folder = os.path.dirname(__file__)
-        lib_files = filter(lambda x: x.endswith(".so"), os.listdir(current_folder))
+        so_folder = os.path.join(PROJECT_ROOT, "cpp", "build")
+        lib_files = filter(lambda x: x.endswith(".so"), os.listdir(so_folder))
 
         if (lib_file := next(lib_files, None)) is None:
             raise FileNotFoundError("Camera library file do not exists!")
 
         # TODO: check for the number of .so files under the folder and only keep the latest.
 
-        return ctypes.CDLL(os.path.join(current_folder, lib_file))
+        return ctypes.CDLL(os.path.join(so_folder, lib_file))
 
     @staticmethod
     def _load_error_types() -> dict[int: str]:
         errors: dict[int: str] = {}
-        path = os.path.join(os.path.dirname(__file__), "camera.cpp")
+        path = os.path.join(PROJECT_ROOT, "cpp", "src", "camera.cpp")
 
         with open(path, 'r') as f:
             for line in f.readlines():
@@ -271,80 +272,3 @@ if __name__ == "__main__":
     img = cam.expose(1_000, bbp=8)
     cam.save_jpg("img.jpg", img)
     cam.close()
-
-
-# if __name__ == "__main__":
-#     from PIL import Image
-#     import numpy as np
-#     import cv2
-#     import requests
-#     from astropy.io import fits
-#
-#     cam = Camera()
-#     cam.config_single_mode()
-#     # cam.config_continuous_mode()
-#
-#     # exp = [50 * (i + 1) for i in range(1, 20)]
-#     # exp += [50 * (i + 1) * 100 for i in range(200)]
-#     # exp += [i * 1_000_000 for i in range(2, 11)]
-#
-#     tw = 2500
-#     roi = ((3856 - tw) / 2, 0), (tw, 2180)
-#
-#     exp = 250
-#     gain = 60
-#     cttr = 0
-#
-#     while True:
-#
-#         server_url = 'http://camserver.physics.ucsb.edu/upload_live'
-#
-#         img, _ = cam.expose(exp, gain=gain, bbp=16, roi=roi)
-#         image_8bit = (img / 256).astype(np.uint8)
-#
-#         pixelSum = np.sum(img.flatten())
-#
-#         base = 1e9
-#
-#         if not 150 * base <= pixelSum <= 250 * base:
-#             exp = get_exp_time(cam, exp, 200 * base)
-#
-#         text = cam.exposure_text()
-#         cam.draw_text(text, image_8bit)
-#
-#         print(pixelSum)
-#         # if cttr % 5 == 0:
-#         #     fits_data = np.transpose(img, (2, 0, 1))  # (channels, height, width)
-#         #
-#         #     # Create FITS HDU
-#         #     hdu = fits.PrimaryHDU(fits_data)
-#         #     hdul = fits.HDUList([hdu])
-#         #
-#         #     # Create a BytesIO object and write the FITS file into it
-#         #     hdul.writeto("image.fits", overwrite=True)
-#         #     print("fits saved")
-#
-#         success, encoded_image = cv2.imencode('.png', image_8bit)
-#         response = requests.post(server_url, data=encoded_image.tobytes())
-#         cttr += 1
-    # roi = (838, 0), (2180, 2180)
-    #
-    # img, _ = cam.expose(250, gain=1, bbp=16, roi=roi)
-    # print(f"roi: {cam.roi}")
-    # start = time()
-    # pix_sum = np.sum(img.flatten())
-    # print(f"calculating time: {time() - start}")
-    # print(f"pixel sum: {pix_sum}")
-    # cam.close()
-    # try:
-    #     while True:
-    #         start = time()
-    #         img, _ = cam.expose(250, gain=1, bbp=16)
-    #         s = np.sum(img.flatten())
-    #         print(s)
-    #         # cam.lib.exposeLive(cam.cam_ptr, p_image, 16, p_roi)
-    #         print(f"fps: {100 / (time() - start): .3f}")
-    #
-    # except Exception:
-    #     cam.close()
-
