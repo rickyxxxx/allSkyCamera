@@ -1,16 +1,15 @@
 import requests
 from datetime import datetime
-from multiprocessing import cpu_count, Queue, Lock, Process, Event
 
 from time import sleep
 
 import numpy as np
 import cv2
 
-from camera.camera import Camera
+from src.common.camera import Camera
 
 
-SERVER_URL = 'http://camserver.physics.ucsb.edu/upload_live'
+SERVER_URL = 'https://camserver.physics.ucsb.edu/upload_live'
 
 
 def frame_post_process(image: np.ndarray, **kwargs) -> None:
