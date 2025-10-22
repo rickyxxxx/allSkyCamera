@@ -2,7 +2,7 @@ from astropy.io import fits
 import io
 
 import requests
-from camera.camera import Camera
+from src.common.camera import Camera
 from time import sleep
 from PIL import Image
 import datetime
