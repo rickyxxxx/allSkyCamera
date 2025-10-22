@@ -1,0 +1,58 @@
+[build-system]
+# Minimum build requirements — this tells pip how to build your project
+requires = ["setuptools>=61.0", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Core metadata
+name = "all-sky camera system"
+version = "0.1.0"
+description = "Python and C++ code for controlling an all-sky camera system."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Ruitao Xu", email = "rx2282@columbia.edu" }
+]
+
+# Compatible Python versions
+requires-python = ">=3.12.3"
+
+# Dependencies (installed via pip)
+dependencies = [
+  "numpy~=2.1.0",
+  "tqdm~=4.66.5",
+  "pillow~=10.4.0",
+  "opencv-python~=4.10.0.84",
+  "astropy~=6.1.3",
+  "psutil~=6.0.0",
+  "serial~=0.0.97",
+  "pyserial~=3.5",
+  "micropyGPS~=1.0",
+  "requests~=2.32.3",
+  "eventlet~=0.39.0",
+]
+
+# Entry points for running directly (like `python -m my_project`)
+[project.scripts]
+my_project = "src.main:main"
+
+# Where the source code lives
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["common*", "modules*", "configs*"]
+exclude = ["tests*"]
+
+# Include your C++ shared library in the build
+[tool.setuptools.package-data]
+"common" = ["*.so"]
+"configs" = ["*.yaml"]
+
+# Optional: custom installation paths or data files
+[tool.setuptools.data-files]
+"etc/systemd/system" = ["service/project.service"]
+
+# Dynamic versioning (if you want automatic git version tags)
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "node-and-date"
+fallback_version = "0.1.0"
