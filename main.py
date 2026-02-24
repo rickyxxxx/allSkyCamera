@@ -16,6 +16,7 @@ from astral import LocationInfo
 from astral.sun import sun
 from typing import Callable
 
+from camera.theraml_driver.thermal import AHT20
 
 domain = "http://camserver.physics.ucsb.edu"
 
@@ -64,8 +65,8 @@ def upload_image(image_buffer, image_name, type='image/jpg', ts="ts", gain=0, ex
         "exp": exp,
         "lng": -119.8610,
         "lat": 34.4133,
-        "temp": aht.get_temperature(),
-        "hum": aht.get_humidity(),
+        "temp": aht20.get_temperature(),
+        "hum": aht20.get_humidity(),
         "tz": "America/Los_Angeles",
         "isDay": isDaytime,
     }
@@ -89,19 +90,6 @@ def is_night():
     if start_time <= now or now <= end_time:
         return True
     return False
-
-
-class AHT20:
-    def __init__(self):
-        i2c = board.I2C()  # uses board.SCL and board.SDA
-        self.sensor = adafruit_ahtx0.AHTx0(i2c)
-
-    def get_temperature(self):
-        return self.sensor.temperature
-
-    def get_humidity(self):
-        return self.sensor.relative_humidity
-
 
 def get_gain(get_sunrise_sunset: Callable):
     sunrise, sunset = get_sunrise_sunset()
@@ -239,15 +227,13 @@ if __name__ == "__main__":
     from datetime import timedelta as tdelta
     cam = Camera()
     gss = init_sun_rise_set_calculator()
+    aht20 = AHT20()
     tw = 2500
     roi = ((3856 - tw) / 2, 0), (tw, 2180)
     gain = get_gain(gss)
 
-
-
     #    buf = BytesIO()
     try:
-        aht = AHT20()
         cam.config_single_mode()
 
         # st2 = Thread(target=ns)
@@ -281,6 +267,9 @@ if __name__ == "__main__":
 #                interval = 0
 #            if timenow > end_date:
 #                interval = 300
+
+            # Update heater board
+            aht20.update()
 
             buf = BytesIO()
             gain = get_gain(gss)
@@ -330,7 +319,7 @@ if __name__ == "__main__":
                 #     gain = auto_gain(cam, 250, 200 * base, gain, roi)
 
             while tt() - starttime < interval:
-            	sleep(1)
+                sleep(1)
             starttime = tt()
 
         # st.join()
